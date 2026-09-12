@@ -195,8 +195,18 @@
   }
 
   // ---- pages ----
+  var NAVLINKS=[['navwork','work'],['navcv','cv'],['navcontact','contact']];
+  function setNav(name){
+    NAVLINKS.forEach(function(nl){ var el=EL[nl[0]]; if(!el) return;
+      var on=(nl[1]===name);
+      el.style.textDecoration = on ? 'underline' : 'none';
+      el.style.textUnderlineOffset = '5px';
+      el.style.textDecorationThickness = '1px';
+    });
+  }
   function setPage(name){
     S.page=name;
+    setNav(name);
     var pages={work:EL.work, contact:EL.contact, cv:EL.cv};
     Object.keys(pages).forEach(function(k){ var el=pages[k]; if(!el) return; var on=(k===name);
       el.style.opacity=on?'1':'0'; el.style.pointerEvents=on?'auto':'none'; });
@@ -212,20 +222,18 @@
   }
 
   // ---- nav handlers ----
-  // The Work page IS the main page: clicking Work goes to "/". Landing on "/work" keeps that
-  // path (it is a valid alias), so a shared /work link stays what the visitor sees in the bar.
+  // The Work page IS the main page and lives at "/" only - there is no /work.
   function goMain(e){ if(e) e.preventDefault(); setPage('work'); setUrl('/'); }
-  function goWork(e){ if(e) e.preventDefault(); setPage('work'); setUrl('/work'); }
   function goCV(e){ if(e) e.preventDefault(); setPage('cv'); setUrl('/cv'); }
   function goContact(e){ if(e) e.preventDefault(); setPage('contact'); setUrl('/contact'); }
   EL.navwork.addEventListener('click', goMain);
   EL.navcv.addEventListener('click', goCV);
   EL.navcontact.addEventListener('click', goContact);
 
-  // ---- routes: / and /work are the same page. /work /cv /contact are real URLs: GitHub Pages serves
-  // work/index.html etc., which bounce to /#work; we open that page and rewrite the URL back to /work.
-  // Clicking nav pushes the matching path; back/forward re-apply the route. ----
-  var ROUTES={work:goWork, cv:goCV, contact:goContact};
+  // ---- routes: "/" is the main (Work) page. /cv and /contact are real URLs: GitHub Pages serves
+  // cv/index.html and contact/index.html, which bounce to /#page; the router opens that page and
+  // rewrites back to the clean path. Clicking nav pushes the path; back/forward re-apply it. ----
+  var ROUTES={cv:goCV, contact:goContact};
   function setUrl(path){
     if(location.protocol==='file:') return;
     try{
