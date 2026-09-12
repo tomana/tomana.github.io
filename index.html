@@ -47,6 +47,7 @@
     <video id="obx-video" preload="auto" autoplay loop muted playsinline style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);min-width:100%;min-height:100%;width:auto;height:auto;object-fit:cover;">
       <source src="obelisken.mp4" type="video/mp4">
     </video>
+    <canvas id="obx-workcanvas" style="position:absolute;inset:0;width:100%;height:100%;display:block;mix-blend-mode:difference;pointer-events:none;"></canvas>
     <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:14px;pointer-events:none;font-family:'Martian Mono',monospace;color:#fff;mix-blend-mode:difference;padding-bottom:18vh;">
       <div style="font-size:11px;letter-spacing:.28em;text-transform:uppercase;color:rgba(255,255,255,.55);">Work</div>
       <a id="obx-worklink" href="https://vimeo.com/tomana" target="_blank" rel="noopener" style="font-size:clamp(18px,2.4vw,30px);letter-spacing:.04em;color:#fff;text-decoration:none;border-bottom:1px solid rgba(255,255,255,.4);padding-bottom:2px;">vimeo.com/tomana</a>
@@ -77,7 +78,7 @@
 (function(){
   // ---- element handles ----
   var EL = {};
-  ['wrap','canvas','vig','flare','nav','wm','wmbox','work','video','worklink','contact','video2','mail','cv',
+  ['wrap','canvas','vig','flare','nav','wm','wmbox','work','video','worklink','workcanvas','contact','video2','mail','cv',
    'home','navwork','navcv','navcontact'].forEach(function(k){ EL[k]=document.getElementById('obx-'+k); });
 
   // ---- state ----
@@ -279,6 +280,7 @@
     var W=w.clientWidth||window.innerWidth, H=w.clientHeight||window.innerHeight;
     cv.width=Math.round(W*DPR); cv.height=Math.round(H*DPR);
     A._aspect=cv.width/cv.height;
+    if(EL.workcanvas){ EL.workcanvas.width=cv.width; EL.workcanvas.height=cv.height; }
   }
 
   function revealMenu(){ if(EL.nav){ EL.nav.style.opacity='1'; EL.nav.style.pointerEvents='auto'; } }
@@ -288,16 +290,51 @@
     revealMenu();
   }
 
-  function renderCanvas(t){
-    var cv=EL.canvas, ctx=A.ctx; if(!cv||!ctx) return;
-    var W=cv.width,H=cv.height; ctx.clearRect(0,0,W,H);
-    var cam=camParams(t),thr=revealThreshold(t);
+  function makeView(cam,W,H){
     var cy=Math.cos(cam.yaw),sy=Math.sin(cam.yaw),cx=Math.cos(cam.pitch),sx=Math.sin(cam.pitch);
-    var focal=(H/2)/Math.tan(cam.fovy/2),ox=W*0.5,oy=H*0.47;
+    var focal=(H/2)/Math.tan(cam.fovy/2),ox=W*0.5,oy=H*(cam.oyFrac!==undefined?cam.oyFrac:0.47);
     function rot(p){var x=p[0],y=p[1]-cam.yCenter,z=p[2];
       var x1=cy*x-sy*z,z1=sy*x+cy*z; var y1=cx*y+sx*z1,z2=-sx*y+cx*z1; return [x1,y1,z2-cam.camDist];}
     function rl(p){var x=p[0],y=p[1],z=p[2]; var x1=cy*x-sy*z,z1=sy*x+cy*z; var y1=cx*y+sx*z1,z2=-sx*y+cx*z1; return [x1,y1,z2];}
     function proj(c){var f=focal/Math.max(0.05,-c[2]); return [ox+c[0]*f,oy-c[1]*f];}
+    return {rot:rot,rl:rl,proj:proj};
+  }
+
+  // ---- Work page: the rig, turning slowly, blended as a negative over the video ----
+  var OV = { rate:0.00025, dist:19.0, oyFrac:0.45 };   // rad/ms (one turn ~25s), camera distance, vertical anchor
+  function renderOverlay(t){
+    var cv=EL.workcanvas, ctx=A.octx; if(!cv||!ctx) return;
+    var W=cv.width,H=cv.height; ctx.clearRect(0,0,W,H);
+    var cam={yaw:-0.50+t*OV.rate, pitch:0.085+Math.sin(t*0.00017)*0.012, yCenter:3.95, camDist:OV.dist, fovy:0.55, oyFrac:OV.oyFrac};
+    var V=makeView(cam,W,H);
+    var lw=[-0.35,0.92,0.42]; var ll=Math.hypot(lw[0],lw[1],lw[2]); var L=V.rl([lw[0]/ll,lw[1]/ll,lw[2]/ll]);
+    var faces=A.faces, draw=[];
+    for(var i=0;i<faces.length;i++){
+      var f=faces[i], n=V.rl(f.n), cvp=f.v.map(V.rot);
+      var cz=0,ccx=0,ccy=0,ccz=0;
+      for(var k=0;k<cvp.length;k++){ cz+=cvp[k][2]; ccx+=cvp[k][0]; ccy+=cvp[k][1]; ccz+=cvp[k][2]; }
+      var m=cvp.length; cz/=m; ccx/=m; ccy/=m; ccz/=m;
+      var tl=Math.hypot(ccx,ccy,ccz)||1; var facing=-(n[0]*ccx+n[1]*ccy+n[2]*ccz)/tl;
+      if(facing<=0.02) continue;
+      var diff=Math.max(0,n[0]*L[0]+n[1]*L[1]+n[2]*L[2]);
+      var fres=Math.pow(1-Math.min(1,facing),3);
+      var v=Math.min(1,0.42+0.5*diff+0.3*fres);          // white = full inversion, grey = partial
+      draw.push({cz:cz,fi:i,s:cvp.map(V.proj),v:v});
+    }
+    draw.sort(function(a,b){var d=a.cz-b.cz; return Math.abs(d)>1e-4?d:a.fi-b.fi;});
+    for(var d=0;d<draw.length;d++){
+      var dd=draw[d], s=dd.s; ctx.beginPath(); ctx.moveTo(s[0][0],s[0][1]);
+      for(var si=1;si<s.length;si++) ctx.lineTo(s[si][0],s[si][1]); ctx.closePath();
+      var g=Math.round(dd.v*255); ctx.fillStyle='rgb('+g+','+g+','+g+')'; ctx.fill();
+      ctx.lineWidth=Math.max(0.6,DPR*0.6); ctx.strokeStyle='rgba(255,255,255,.45)'; ctx.stroke();
+    }
+  }
+
+  function renderCanvas(t){
+    var cv=EL.canvas, ctx=A.ctx; if(!cv||!ctx) return;
+    var W=cv.width,H=cv.height; ctx.clearRect(0,0,W,H);
+    var cam=camParams(t),thr=revealThreshold(t);
+    var V=makeView(cam,W,H), rot=V.rot, rl=V.rl, proj=V.proj;
     var lw=[-0.35,0.92,0.42]; var ll=Math.hypot(lw[0],lw[1],lw[2]); lw=[lw[0]/ll,lw[1]/ll,lw[2]/ll]; var L=rl(lw);
     function clip(verts){var T=thr.y,out=[];
       for(var i=0;i<verts.length;i++){var a=verts[i],b=verts[(i+1)%verts.length];
@@ -493,11 +530,12 @@
   A.kallaxFaces = buildKallax();
   A.pyrFaces = buildPyramid();
   A.ctx = EL.canvas.getContext('2d');
+  A.octx = EL.workcanvas ? EL.workcanvas.getContext('2d') : null;
   A.start = performance.now() - REVEAL_DUR - 100;
   S.introStart = performance.now(); S.introDone = false;
   resize();
   window.addEventListener('resize', resize);
-  (function loop(t){ try{ renderCanvas(t); }catch(e){ /* keep running */ } requestAnimationFrame(loop); })(performance.now());
+  (function loop(t){ try{ renderCanvas(t); if(S.introDone && S.page==='work') renderOverlay(t); }catch(e){ /* keep running */ } requestAnimationFrame(loop); })(performance.now());
 })();
 </script>
 </body>
