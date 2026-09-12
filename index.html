@@ -149,7 +149,7 @@
   // ================= view + overlay =================
   function makeView(cam,W,H){
     var cy=Math.cos(cam.yaw),sy=Math.sin(cam.yaw),cx=Math.cos(cam.pitch),sx=Math.sin(cam.pitch);
-    var focal=(H/2)/Math.tan(cam.fovy/2),ox=W*0.5,oy=H*(cam.oyFrac!==undefined?cam.oyFrac:0.47);
+    var focal=(H/2)/Math.tan(cam.fovy/2),ox=cam.ox,oy=cam.oy;
     function rot(p){var x=p[0],y=p[1]-cam.yCenter,z=p[2];
       var x1=cy*x-sy*z,z1=sy*x+cy*z; var y1=cx*y+sx*z1,z2=-sx*y+cx*z1; return [x1,y1,z2-cam.camDist];}
     function rl(p){var x=p[0],y=p[1],z=p[2]; var x1=cy*x-sy*z,z1=sy*x+cy*z; var y1=cx*y+sx*z1,z2=-sx*y+cx*z1; return [x1,y1,z2];}
@@ -158,11 +158,19 @@
   }
 
   // ---- Work page: the rig, turning slowly, blended as a negative over the video ----
-  var OV = { rate:0.00025, dist:19.0, oyFrac:0.45 };   // rad/ms (one turn ~25s), camera distance, vertical anchor
+  // Parked in the top-right corner. The rig's on-screen height is H/dist only (independent of
+  // width), so dist sets it as a fraction of page height; inset and top are fractions of HEIGHT
+  // too, which keeps the corner margins proportional to the rig itself on any viewport.
+  // swing = half the sweep in radians (0.16 rad ~ 9 deg, so an 18-deg oscillation); rate sets its period.
+  var OV = { rate:0.00028, swing:0.16, dist:31.7, inset:0.13, top:0.235 };  // ~1/3 page height, ~22s sweep
+  var LENS_DEPTH=[-0.05,5.62,0.255];   // upper head: the depth camera's lens rim
+  var LENS_PROJ =[-0.10,5.02,0.355];   // lower head: the projector's lens rim
+  var CAPTION=['THE BODY IS MEASURED IN 3D','THE IMAGE IS RE-RENDERED FROM',"THE PROJECTOR'S OWN VIEWPOINT"];
   function renderOverlay(t){
     var cv=EL.workcanvas, ctx=A.octx; if(!cv||!ctx) return;
     var W=cv.width,H=cv.height; ctx.clearRect(0,0,W,H);
-    var cam={yaw:-0.50+t*OV.rate, pitch:0.085+Math.sin(t*0.00017)*0.012, yCenter:3.95, camDist:OV.dist, fovy:0.55, oyFrac:OV.oyFrac};
+    var cam={yaw:-0.50+Math.sin(t*OV.rate)*OV.swing, pitch:0.085+Math.sin(t*0.00017)*0.012, yCenter:3.95,
+             camDist:OV.dist, fovy:0.55, ox:W-H*OV.inset, oy:H*OV.top};
     var V=makeView(cam,W,H);
     var lw=[-0.35,0.92,0.42]; var ll=Math.hypot(lw[0],lw[1],lw[2]); var L=V.rl([lw[0]/ll,lw[1]/ll,lw[2]/ll]);
     var faces=A.faces, draw=[];
@@ -185,6 +193,55 @@
       var g=Math.round(dd.v*255); ctx.fillStyle='rgb('+g+','+g+','+g+')'; ctx.fill();
       ctx.lineWidth=Math.max(0.6,DPR*0.6); ctx.strokeStyle='rgba(255,255,255,.45)'; ctx.stroke();
     }
+
+    // ---- what the rig is doing: sensing cone out to the body, projection cone back onto it ----
+    var fs=Math.max(9*DPR, Math.min(13*DPR, H*0.0135));
+    var pDepth=V.proj(V.rot(LENS_DEPTH)), pProj=V.proj(V.rot(LENS_PROJ)), base=V.proj(V.rot([0,0,0]));
+
+    function beam(p,tx,ty,sp){
+      var dx=tx-p[0], dy=ty-p[1], l=Math.hypot(dx,dy)||1, nx=-dy/l, ny=dx/l;
+      return { a:[tx+nx*sp,ty+ny*sp], b:[tx-nx*sp,ty-ny*sp],
+               at:function(f,o){ return [p[0]+dx*f+nx*o, p[1]+dy*f+ny*o]; } };
+    }
+    function text(str,x,y,align,alpha){
+      ctx.save();
+      ctx.font='400 '+fs.toFixed(1)+"px 'Martian Mono', monospace";
+      try{ ctx.letterSpacing=(fs*0.12).toFixed(2)+'px'; }catch(e){}
+      ctx.textAlign=align; ctx.textBaseline='middle';
+      ctx.fillStyle='rgba(255,255,255,'+alpha+')'; ctx.fillText(str,x,y); ctx.restore();
+    }
+
+    var BD=beam(pDepth, W*0.47, H*0.50, H*0.115);   // depth camera measuring the surface
+    var BP=beam(pProj,  W*0.45, H*0.58, H*0.135);   // projector putting the image back on it
+
+    var mid=[(BP.a[0]+BP.b[0])/2,(BP.a[1]+BP.b[1])/2];
+    var grad=ctx.createLinearGradient(pProj[0],pProj[1],mid[0],mid[1]);
+    grad.addColorStop(0,'rgba(255,255,255,.15)'); grad.addColorStop(1,'rgba(255,255,255,0)');
+    ctx.fillStyle=grad; ctx.beginPath();
+    ctx.moveTo(pProj[0],pProj[1]); ctx.lineTo(BP.a[0],BP.a[1]); ctx.lineTo(BP.b[0],BP.b[1]);
+    ctx.closePath(); ctx.fill();
+
+    ctx.save(); ctx.setLineDash([6*DPR,5*DPR]); ctx.lineWidth=Math.max(1,DPR);
+    ctx.strokeStyle='rgba(255,255,255,.34)'; ctx.beginPath();
+    ctx.moveTo(BD.a[0],BD.a[1]); ctx.lineTo(pDepth[0],pDepth[1]); ctx.lineTo(BD.b[0],BD.b[1]);
+    ctx.stroke(); ctx.restore();
+
+    // A portrait viewport crops the video tight, so there is no dark margin to set text against:
+    // push the labels clear of the rig and move the caption to the bottom, brighter and centred.
+    // A portrait viewport crops the video tight and leaves no dark margin beside the rig, so the
+    // labels swing to the far side of their beams and the caption drops into the dark band under
+    // the link, where white type reads brightly instead of fighting the body.
+    var narrow=(W/H)<0.9;
+    var lD=BD.at(narrow?0.45:0.34, narrow? fs*3.2 : -fs*1.25);
+    var lP=BP.at(narrow?0.62:0.62, fs*1.45);
+    text('DEPTH IN',  lD[0], lD[1], 'center', narrow?.85:.62);
+    text('LIGHT OUT', lP[0], lP[1], 'center', narrow?.85:.62);
+
+    var capX     = narrow ? W*0.5    : W-H*0.07;
+    var capY     = narrow ? H*0.855  : base[1]+fs*2.4;
+    var capA     = narrow ? .8       : .5;
+    var capAlign = narrow ? 'center' : 'right';
+    CAPTION.forEach(function(line,i){ text(line, capX, capY+i*fs*1.85, capAlign, capA); });
   }
 
 
