@@ -244,8 +244,8 @@
     var narrow=(W/H)<0.9;
     // portrait puts the rig right where the near end of each cone is, so the labels slide further
     // down their beams and further off-axis to clear it
-    var lD=BD.at(narrow?0.45:0.20, fs*(narrow?3.6:1.7));
-    var lP=BP.at(narrow?0.60:0.38, fs*(narrow?2.2:1.7));
+    var lD=BD.at(narrow?0.38:0.145, fs*(narrow?4.2:1.7));
+    var lP=BP.at(narrow?0.50:0.18, fs*(narrow?3.0:1.7));
     text('DEPTH IN',  lD[0], lD[1], 'center', narrow?.85:.66);
     text('LIGHT OUT', lP[0], lP[1], 'center', narrow?.85:.66);
 
