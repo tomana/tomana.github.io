@@ -171,10 +171,10 @@
              ambient:0.36, key:0.42, rim:0.25, edge:0.38 };
   var LENS_DEPTH=[-0.05,5.62,0.255];   // upper head: the depth camera's lens rim
   var LENS_PROJ =[-0.10,5.02,0.355];   // lower head: the projector's lens rim
-  var CAPTION=['A DEPTH CAMERA MAPS THE BODY IN 3D.',
-               'REALTIME PROCESSING WITH CAMERA',
-               'AND PROJECTOR INTRINSICS',
-               'REPROJECT IT INTO WORLD SPACE'];
+  var CAPTION=['REALTIME PROCESSING WITH',
+               'CAMERA-PROJECTOR INTRINSICS',
+               'THAT MAPS A DEPTH MAP BACK',
+               'INTO WORLD SPACE'];
   function renderOverlay(t){
     var cv=EL.workcanvas, ctx=A.octx; if(!cv||!ctx) return;
     var W=cv.width,H=cv.height; ctx.clearRect(0,0,W,H);
