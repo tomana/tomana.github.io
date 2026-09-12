@@ -12,25 +12,12 @@
   @font-face{font-family:'Martian Mono';font-style:normal;font-weight:400;font-display:swap;src:url('fonts/MartianMono.ttf') format('truetype');}
   html,body{margin:0;padding:0;background:#000;overflow:hidden;}
   *{box-sizing:border-box;}
-  a,h1,div,span,p{-webkit-user-select:text;user-select:text;}
+  a,div,span,p{-webkit-user-select:text;user-select:text;}
   a{-webkit-user-drag:none;}
-  h1{pointer-events:auto;}
-  @keyframes obx-wm{
-    0%{opacity:0;letter-spacing:.66em;filter:blur(10px);transform:translateY(10px) scale(.84);}
-    60%{opacity:1;}
-    100%{opacity:1;letter-spacing:.30em;filter:blur(0);transform:translateY(0) scale(1);}
-  }
 </style>
 </head>
 <body>
-<div id="obx-wrap" style="position:fixed;top:0;left:0;right:0;height:100vh;height:100svh;background:radial-gradient(125% 95% at 50% 34%, #1a1918 0%, #0d0c0c 44%, #050505 74%, #000 100%);font-family:'Archivo',sans-serif;overflow:hidden;">
-
-  <div style="position:absolute;inset:0;pointer-events:none;opacity:.05;background-image:url(&quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E&quot;);background-size:200px 200px;"></div>
-
-  <canvas id="obx-canvas" style="position:absolute;inset:0;width:100%;height:100%;display:block;"></canvas>
-
-  <div id="obx-vig" style="position:absolute;inset:0;pointer-events:none;background:radial-gradient(115% 80% at 50% 40%, rgba(0,0,0,0) 38%, rgba(0,0,0,.45) 72%, rgba(0,0,0,.82) 100%);"></div>
-  <div id="obx-flare" style="position:absolute;inset:0;pointer-events:none;mix-blend-mode:screen;"></div>
+<div id="obx-wrap" style="position:fixed;top:0;left:0;right:0;height:100vh;height:100svh;background:#000;font-family:'Archivo',sans-serif;overflow:hidden;">
 
   <nav id="obx-nav" style="position:absolute;top:20px;left:20px;z-index:20;display:flex;flex-direction:column;gap:6px;font-family:'Martian Mono',monospace;color:#fff;mix-blend-mode:difference;opacity:1;transition:opacity .45s ease;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;text-rendering:optimizeLegibility;">
     <a id="obx-home" href="#" style="font-size:14px;font-weight:400;letter-spacing:.10em;text-transform:none;text-decoration:none;color:currentColor;opacity:1;transition:opacity .25s;width:fit-content;padding:10px 0;line-height:1;">Tom Nærland</a>
@@ -38,10 +25,6 @@
     <a id="obx-navcv" href="#" style="font-size:14px;font-weight:400;letter-spacing:.14em;text-transform:uppercase;text-decoration:none;color:currentColor;opacity:1;transition:opacity .25s;width:fit-content;padding:10px 0;line-height:1;">CV</a>
     <a id="obx-navcontact" href="#" style="font-size:14px;font-weight:400;letter-spacing:.14em;text-transform:uppercase;text-decoration:none;color:currentColor;opacity:1;transition:opacity .25s;width:fit-content;padding:10px 0;line-height:1;">Contact</a>
   </nav>
-
-  <div id="obx-wmbox" style="position:absolute;left:0;right:0;top:82%;display:flex;justify-content:center;pointer-events:none;transform:translateY(-50%);">
-    <h1 id="obx-wm" style="margin:0;font-weight:700;font-size:clamp(40px,7vw,98px);line-height:.92;color:#eef0f3;letter-spacing:.30em;text-indent:.30em;font-family:'Archivo',sans-serif;opacity:0;text-shadow:0 0 38px rgba(120,150,200,.18);">OBELISKEN</h1>
-  </div>
 
   <div id="obx-work" style="position:absolute;inset:0;opacity:0;transition:opacity .4s ease;pointer-events:none;background:#000;overflow:hidden;">
     <video id="obx-video" preload="auto" autoplay loop muted playsinline style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);min-width:100%;min-height:100%;width:auto;height:auto;object-fit:cover;">
@@ -78,21 +61,14 @@
 (function(){
   // ---- element handles ----
   var EL = {};
-  ['wrap','canvas','vig','flare','nav','wm','wmbox','work','video','worklink','workcanvas','contact','video2','mail','cv',
+  ['wrap','nav','work','video','worklink','workcanvas','contact','video2','mail','cv',
    'home','navwork','navcv','navcontact'].forEach(function(k){ EL[k]=document.getElementById('obx-'+k); });
 
-  // ---- state ----
-  var FINT=1.15, FSPREAD=1, FSEP=1;                 // flare tuning (sliders removed)
-  var REVEAL_DUR=3400;
   var DPR=Math.min(window.devicePixelRatio||1, 2);
-  var A = { start:0, faces:[], shelfFaces:null, kallaxFaces:null, pyrFaces:null,
-            _sceneAlpha:1, _buildStart:undefined, _inited:false, ctx:null, _aspect:1 };
-  var S = { bgT:0, bgTarget:0, product:'ivar', scene:'obx',
-            wood:{bright:1.05, sat:1.15, yellow:0.18, grain:0.18}, shelfDirty:false,
-            introStart:undefined, introDone:false, phase:'flip', page:null,
-            flipLabel:false, wmAnim:false, doneTime:undefined, mailSet:false };
+  var A = { faces:[], octx:null };
+  var S = { page:null, mailSet:false, _routing:false };
 
-  // ================= geometry =================
+  // ================= geometry: the rig =================
   function norm(a,b,c){var ux=b[0]-a[0],uy=b[1]-a[1],uz=b[2]-a[2],vx=c[0]-a[0],vy=c[1]-a[1],vz=c[2]-a[2];
     var nx=uy*vz-uz*vy,ny=uz*vx-ux*vz,nz=ux*vy-uy*vx;var l=Math.hypot(nx,ny,nz)||1;return [nx/l,ny/l,nz/l];}
 
@@ -169,127 +145,8 @@
     return faces;
   }
 
-  function buildShelf(){
-    var faces=[];
-    function pushQuad(a,b,c,d,al){faces.push({v:[a,b,c,d],n:norm(a,b,c),al:al});}
-    function box(cx,cy,cz,hx,hy,hz,al){
-      var x0=cx-hx,x1=cx+hx,y0=cy-hy,y1=cy+hy,z0=cz-hz,z1=cz+hz,p=function(x,y,z){return [x,y,z];};
-      pushQuad(p(x1,y0,z0),p(x1,y0,z1),p(x1,y1,z1),p(x1,y1,z0),al);
-      pushQuad(p(x0,y0,z1),p(x0,y0,z0),p(x0,y1,z0),p(x0,y1,z1),al);
-      pushQuad(p(x0,y1,z0),p(x1,y1,z0),p(x1,y1,z1),p(x0,y1,z1),al);
-      pushQuad(p(x0,y0,z1),p(x1,y0,z1),p(x1,y0,z0),p(x0,y0,z0),al);
-      pushQuad(p(x0,y0,z1),p(x0,y1,z1),p(x1,y1,z1),p(x1,y0,z1),al);
-      pushQuad(p(x1,y0,z0),p(x1,y1,z0),p(x0,y1,z0),p(x0,y0,z0),al);
-    }
-    function rod(a,b,r,al){
-      var dx=b[0]-a[0],dy=b[1]-a[1],dz=b[2]-a[2];var dl=Math.hypot(dx,dy,dz)||1;dx/=dl;dy/=dl;dz/=dl;
-      var ux=0,uy=1,uz=0; if(Math.abs(dy)>0.95){ux=1;uy=0;}
-      var s1x=dy*uz-dz*uy,s1y=dz*ux-dx*uz,s1z=dx*uy-dy*ux;var l1=Math.hypot(s1x,s1y,s1z)||1;s1x/=l1;s1y/=l1;s1z/=l1;
-      var s2x=dy*s1z-dz*s1y,s2y=dz*s1x-dx*s1z,s2z=dx*s1y-dy*s1x;
-      function cor(p,a1,a2){return [p[0]+s1x*a1+s2x*a2,p[1]+s1y*a1+s2y*a2,p[2]+s1z*a1+s2z*a2];}
-      var A0=cor(a,-r,-r),A1=cor(a,r,-r),A2=cor(a,r,r),A3=cor(a,-r,r);
-      var B0=cor(b,-r,-r),B1=cor(b,r,-r),B2=cor(b,r,r),B3=cor(b,-r,r);
-      pushQuad(A0,A1,B1,B0,al); pushQuad(A1,A2,B2,B1,al); pushQuad(A2,A3,B3,B2,al); pushQuad(A3,A0,B0,B3,al);
-    }
-    var P=S.wood;
-    function tint(base){ var r=base[0],g=base[1],b=base[2]; var lum=0.3*r+0.59*g+0.11*b;
-      r=lum+(r-lum)*P.sat; g=lum+(g-lum)*P.sat; b=lum+(b-lum)*P.sat; b*=(1-P.yellow);
-      return [Math.min(1,Math.max(0,r*P.bright)),Math.min(1,Math.max(0,g*P.bright)),Math.min(1,Math.max(0,b*P.bright))]; }
-    var WOOD=tint([0.93,0.82,0.60]), WOOD2=tint([0.90,0.79,0.57]), WOOD3=tint([0.85,0.73,0.52]), STEEL=[0.70,0.72,0.75];
-    var HX=1.00, HZ=0.42, PT=0.07;
-    var Y0=0.45, Y1=7.0, cyP=(Y0+Y1)/2, hyP=(Y1-Y0)/2;
-    [[-HX,-HZ,WOOD],[HX,-HZ,WOOD],[-HX,HZ,WOOD3],[HX,HZ,WOOD3]].forEach(function(q){box(q[0],cyP,q[1],PT,hyP,PT,q[2]);});
-    var shelfYs=[0.6,2.2,3.8,5.4,6.9], k;
-    for(k=0;k<shelfYs.length;k++){ box(0,shelfYs[k],0,HX+0.015,0.05,HZ+0.015,WOOD2); }
-    for(k=0;k<shelfYs.length;k++){
-      box(-HX,shelfYs[k]-0.085,0,PT*0.55,0.028,HZ-0.02,WOOD3);
-      box( HX,shelfYs[k]-0.085,0,PT*0.55,0.028,HZ-0.02,WOOD3);
-    }
-    var bz=HZ-0.015, yA=shelfYs[1]+0.05, yB=shelfYs[2]-0.05;
-    rod([-HX+PT,yA,bz],[HX-PT,yB,bz],0.011,STEEL);
-    rod([ HX-PT,yA,bz],[-HX+PT,yB,bz],0.011,STEEL);
-    faces.forEach(function(f,i){
-      var isSteel = f.al===STEEL;
-      var seed=(Math.sin(i*12.9898)*43758.5453); var r=((seed%1)+1)%1;
-      var v = isSteel ? (0.98+r*0.04) : (1.0 - P.grain*0.5 + r*P.grain);
-      var warm = isSteel ? 1 : (1.0 + (r-0.5)*P.grain*0.5);
-      f.al = [Math.min(1,f.al[0]*v*warm), Math.min(1,f.al[1]*v), Math.min(1,f.al[2]*v/(warm*warm))];
-    });
-    return faces;
-  }
 
-  function buildKallax(){
-    var faces=[];
-    function pushQuad(a,b,c,d,al){faces.push({v:[a,b,c,d],n:norm(a,b,c),al:al});}
-    function box(cx,cy,cz,hx,hy,hz,al){
-      var x0=cx-hx,x1=cx+hx,y0=cy-hy,y1=cy+hy,z0=cz-hz,z1=cz+hz,p=function(x,y,z){return [x,y,z];};
-      pushQuad(p(x1,y0,z0),p(x1,y0,z1),p(x1,y1,z1),p(x1,y1,z0),al);
-      pushQuad(p(x0,y0,z1),p(x0,y0,z0),p(x0,y1,z0),p(x0,y1,z1),al);
-      pushQuad(p(x0,y1,z0),p(x1,y1,z0),p(x1,y1,z1),p(x0,y1,z1),al);
-      pushQuad(p(x0,y0,z1),p(x1,y0,z1),p(x1,y0,z0),p(x0,y0,z0),al);
-      pushQuad(p(x0,y0,z1),p(x0,y1,z1),p(x1,y1,z1),p(x1,y0,z1),al);
-      pushQuad(p(x1,y0,z0),p(x1,y1,z0),p(x0,y1,z0),p(x0,y0,z0),al);
-    }
-    var WOOD=[0.235,0.175,0.125], WOOD2=[0.205,0.150,0.105], EDGE=[0.275,0.205,0.150];
-    var Y0=0.45, Y1=7.0, T=0.087, P=1.46, DZ=0.87;
-    var WX=1.5*P, innerW=WX-T;
-    var iy0=Y0+T, iy1=Y1-T, span=iy1-iy0, my=(iy0+iy1)/2;
-    box(-WX, (Y0+Y1)/2, 0, T, (Y1-Y0)/2, DZ, WOOD);
-    box( WX, (Y0+Y1)/2, 0, T, (Y1-Y0)/2, DZ, WOOD2);
-    box(-0.5*P, my, 0, T, span/2, DZ, EDGE);
-    box( 0.5*P, my, 0, T, span/2, DZ, EDGE);
-    for(var k=0;k<=4;k++){
-      var y = (k===0)?iy0 : (k===4)?iy1 : iy0 + span*k/4;
-      box(0, y, 0, innerW, T, DZ, EDGE);
-    }
-    return faces;
-  }
-
-  function buildPyramid(){
-    var faces=[];
-    function pushTri(a,b,c,al){faces.push({v:[a,b,c],n:norm(a,b,c),al:al});}
-    var AL=[0.052,0.050,0.047];
-    var hb=2.0, baseY=2.7, h=0.636*2*hb;
-    var apex=[0, baseY+h, 0];
-    var c=[[-hb,baseY,-hb],[hb,baseY,-hb],[hb,baseY,hb],[-hb,baseY,hb]];
-    pushTri(c[3],c[2],apex,AL); pushTri(c[1],c[0],apex,AL);
-    pushTri(c[2],c[1],apex,AL); pushTri(c[0],c[3],apex,AL);
-    return faces;
-  }
-
-  function introState(elapsed){
-    var seq=[[0,'obx'],[100,'ivar'],[184,'pyr'],[254,'kallax'],[312,'obx'],[360,'ivar'],[404,'pyr'],[448,'kallax'],
-             [498,'obx'],[558,'ivar'],[634,'pyr'],[732,'kallax'],[858,'obx'],[1018,'ivar'],[1198,'pyr']];
-    var cur='obx';
-    for(var i=0;i<seq.length;i++){ if(elapsed>=seq[i][0]) cur=seq[i][1]; else break; }
-    return { scene:cur, done: elapsed >= seq[seq.length-1][0] };
-  }
-
-  function camParams(t){
-    var sway=Math.sin(t*0.00022)*0.05, bob=Math.sin(t*0.00017)*0.012;
-    return {yaw:-0.50+sway,pitch:0.085+bob,yCenter:3.95,camDist:17.0,fovy:0.55};
-  }
-  function revealThreshold(t){
-    var p=Math.min(1,(t-A.start)/REVEAL_DUR);
-    var e=p<1?(1-Math.pow(1-p,3)):1;
-    return {y:-0.3+e*9.0,p:p};
-  }
-
-  function resize(){
-    var cv=EL.canvas, w=EL.wrap; if(!cv||!w) return;
-    var W=w.clientWidth||window.innerWidth, H=w.clientHeight||window.innerHeight;
-    cv.width=Math.round(W*DPR); cv.height=Math.round(H*DPR);
-    A._aspect=cv.width/cv.height;
-    if(EL.workcanvas){ EL.workcanvas.width=cv.width; EL.workcanvas.height=cv.height; }
-  }
-
-  function revealMenu(){ if(EL.nav){ EL.nav.style.opacity='1'; EL.nav.style.pointerEvents='auto'; } }
-  function abortIntro(){
-    S.introDone=true; S.phase='build'; A._sceneAlpha=1;
-    A.start = performance.now() - REVEAL_DUR - 100; A._buildStart = performance.now() - REVEAL_DUR - 100;
-    revealMenu();
-  }
-
+  // ================= view + overlay =================
   function makeView(cam,W,H){
     var cy=Math.cos(cam.yaw),sy=Math.sin(cam.yaw),cx=Math.cos(cam.pitch),sx=Math.sin(cam.pitch);
     var focal=(H/2)/Math.tan(cam.fovy/2),ox=W*0.5,oy=H*(cam.oyFrac!==undefined?cam.oyFrac:0.47);
@@ -330,212 +187,72 @@
     }
   }
 
-  function renderCanvas(t){
-    var cv=EL.canvas, ctx=A.ctx; if(!cv||!ctx) return;
-    var W=cv.width,H=cv.height; ctx.clearRect(0,0,W,H);
-    var cam=camParams(t),thr=revealThreshold(t);
-    var V=makeView(cam,W,H), rot=V.rot, rl=V.rl, proj=V.proj;
-    var lw=[-0.35,0.92,0.42]; var ll=Math.hypot(lw[0],lw[1],lw[2]); lw=[lw[0]/ll,lw[1]/ll,lw[2]/ll]; var L=rl(lw);
-    function clip(verts){var T=thr.y,out=[];
-      for(var i=0;i<verts.length;i++){var a=verts[i],b=verts[(i+1)%verts.length];
-        var ain=a[1]<=T,bin=b[1]<=T; if(ain)out.push(a);
-        if(ain!==bin){var tt=(T-a[1])/(b[1]-a[1]); out.push([a[0]+(b[0]-a[0])*tt,T,a[2]+(b[2]-a[2])*tt]);}}
-      return out;}
-    if(S.shelfDirty){ A.shelfFaces = buildShelf(); S.shelfDirty = false; }
-    if(A._sceneAlpha===undefined) A._sceneAlpha=1;
-    if(!S.introDone){
-      var el = t - (S.introStart!==undefined ? S.introStart : t);
-      var FLIP_END=1290, FADE=460;
-      if(el < FLIP_END){
-        var st = introState(el);
-        S.scene = st.scene;
-        S.flipLabel = (st.scene!=='obx') || (el>=480);
-        S.bgTarget = (st.scene==='ivar'||st.scene==='kallax') ? 1 : 0; S.bgT = S.bgTarget;
-        thr.y = 100; A._sceneAlpha = 1; A._buildStart = undefined; S.phase='flip';
-      } else if(el < FLIP_END+FADE){
-        S.scene='pyr'; S.bgTarget=0; S.bgT=0;
-        thr.y = 100; A._sceneAlpha = Math.max(0, 1-(el-FLIP_END)/FADE); S.phase='fade';
-      } else {
-        if(A._buildStart===undefined) A._buildStart = t;
-        S.scene='obx'; S.bgTarget=0; S.bgT=0; A._sceneAlpha=1; S.phase='build';
-        var bp=Math.min(1,(t-A._buildStart)/REVEAL_DUR);
-        var e=bp<1?(1-Math.pow(1-bp,3)):1; thr.y = -0.3 + e*9.0;
-        if(bp>=1){ S.introDone=true; A.start = t - REVEAL_DUR - 100; if(S.doneTime===undefined) S.doneTime=t; }
-      }
-    } else { A._sceneAlpha = 1; }
-    if(A._buildStart!==undefined && t > A._buildStart + REVEAL_DUR*0.5 && EL.nav && EL.nav.style.opacity!=='1'){
-      EL.nav.style.opacity='1'; EL.nav.style.pointerEvents='auto';
-    }
-    S.bgT += (S.bgTarget - S.bgT) * 0.8;
-    if(Math.abs(S.bgTarget - S.bgT) < 0.01) S.bgT = S.bgTarget;
-    var mix = S.bgT;
-    function lc(a,b,m){return [Math.round(a[0]+(b[0]-a[0])*m),Math.round(a[1]+(b[1]-a[1])*m),Math.round(a[2]+(b[2]-a[2])*m)];}
-    var blankPage = S.introDone && (S.page==='work' || S.page==='cv' || S.page==='contact');
 
-    var wbox=EL.work;
-    if(wbox){
-      var showWork = blankPage && S.page==='work';
-      wbox.style.opacity = showWork ? '1' : '0';
-      wbox.style.pointerEvents = showWork ? 'auto' : 'none';
-      if(EL.worklink) EL.worklink.style.pointerEvents = showWork ? 'auto' : 'none';
-      var vid=EL.video;
-      if(vid){ if(showWork){ if(vid.paused) vid.play().catch(function(){}); } else if(!vid.paused){ vid.pause(); } }
-    }
-    var cbox=EL.contact;
-    if(cbox){
-      var showContact = blankPage && S.page==='contact';
-      cbox.style.opacity = showContact ? '1' : '0';
-      cbox.style.pointerEvents = showContact ? 'auto' : 'none';
-      var cvid=EL.video2;
-      if(cvid){ if(showContact){ if(cvid.paused) cvid.play().catch(function(){}); } else if(!cvid.paused){ cvid.pause(); } }
-      var mail=EL.mail;
-      if(mail) mail.style.pointerEvents = showContact ? 'auto' : 'none';
-      if(showContact && !S.mailSet && mail){
-        var u=['tom','naerland'].join('.'); var d=['gmail','com'].join('.');
-        var addr=u+String.fromCharCode(64)+d;
-        mail.textContent=addr; mail.href='mai'+'lto:'+addr; S.mailSet=true;
-      }
-    }
-    var cvbox=EL.cv;
-    if(cvbox){
-      var showCV = blankPage && S.page==='cv';
-      cvbox.style.opacity = showCV ? '1' : '0';
-      cvbox.style.pointerEvents = showCV ? 'auto' : 'none';
-    }
-    var activeFaces = blankPage ? [] : (mix>0.5 ? (S.scene==='kallax' ? A.kallaxFaces : A.shelfFaces) : (S.scene==='pyr' ? A.pyrFaces : A.faces));
-    ctx.globalAlpha = (0.3 + 0.7*Math.min(1, Math.abs(mix-0.5)*2)) * (A._sceneAlpha===undefined?1:A._sceneAlpha);
-    var strokeC = lc([202,199,194],[120,92,55],mix);
-    var draw=[]; var _fi=-1;
-    for(var fi2=0;fi2<activeFaces.length;fi2++){
-      var f=activeFaces[fi2]; _fi++;
-      var minY=Infinity,maxY=-Infinity, vi;
-      for(vi=0;vi<f.v.length;vi++){var vv=f.v[vi]; if(vv[1]<minY)minY=vv[1]; if(vv[1]>maxY)maxY=vv[1];}
-      if(minY>thr.y) continue;
-      var poly=f.v;
-      if(maxY>thr.y){poly=clip(f.v); if(poly.length<3) continue;}
-      var n=rl(f.n);
-      var cvp=poly.map(rot);
-      var cz=0,ccx=0,ccy=0,ccz=0, ci;
-      for(ci=0;ci<cvp.length;ci++){var cc=cvp[ci];cz+=cc[2];ccx+=cc[0];ccy+=cc[1];ccz+=cc[2];}
-      var kk=cvp.length; cz/=kk;ccx/=kk;ccy/=kk;ccz/=kk;
-      var tx=-ccx,ty=-ccy,tz=-ccz; var tl=Math.hypot(tx,ty,tz)||1; tx/=tl;ty/=tl;tz/=tl;
-      var facing=n[0]*tx+n[1]*ty+n[2]*tz;
-      if(facing<=0.02) continue;
-      var diff=Math.max(0,n[0]*L[0]+n[1]*L[1]+n[2]*L[2]);
-      var fres=Math.pow(1-Math.min(1,Math.max(0,facing)),3);
-      var amb=(mix>0.5?0.34:0.17),key=0.95;
-      var r=f.al[0]*(amb+diff*key)+fres*0.235;
-      var g=f.al[1]*(amb+diff*key)+fres*0.230;
-      var b=f.al[2]*(amb+diff*key)+fres*0.222;
-      var band=Math.max(0,1-Math.abs(maxY-thr.y)/0.18);
-      draw.push({cz:cz,fi:_fi,screen:cvp.map(proj),r:r,g:g,b:b,band:band});
-    }
-    draw.sort(function(a,b){var d=a.cz-b.cz; return Math.abs(d)>1e-4 ? d : a.fi-b.fi;});
-    function tc(v){return Math.max(0,Math.min(255,Math.round(Math.pow(Math.min(1,v),0.85)*255)));}
-    for(var di=0;di<draw.length;di++){
-      var dd=draw[di]; var s=dd.screen; ctx.beginPath(); ctx.moveTo(s[0][0],s[0][1]);
-      for(var si=1;si<s.length;si++) ctx.lineTo(s[si][0],s[si][1]); ctx.closePath();
-      ctx.fillStyle='rgb('+tc(dd.r)+','+tc(dd.g)+','+tc(dd.b)+')'; ctx.fill();
-      ctx.lineWidth=Math.max(0.6,DPR*0.6);
-      ctx.strokeStyle='rgba('+strokeC[0]+','+strokeC[1]+','+strokeC[2]+','+(0.05+dd.band*0.45)+')'; ctx.stroke();
-    }
-    ctx.globalAlpha = 1;
+  function resize(){
+    var cv=EL.workcanvas, w=EL.wrap; if(!cv||!w) return;
+    var W=w.clientWidth||window.innerWidth, H=w.clientHeight||window.innerHeight;
+    cv.width=Math.round(W*DPR); cv.height=Math.round(H*DPR);
+  }
 
-    if(EL.wm && EL.wmbox){
-      var top=proj(rot([0,7.05,0])), base=proj(rot([0,0.0,0]));
-      var objH=Math.abs(base[1]-top[1])/DPR;
-      var fontPx=objH*0.165;
-      var baseCss=base[1]/DPR;
-      EL.wm.style.fontSize=fontPx.toFixed(1)+'px';
-      var maxW=(EL.wrap?EL.wrap.clientWidth:window.innerWidth)*0.8;
-      ctx.font="700 "+fontPx+"px 'Archivo', sans-serif";
-      var obxW=ctx.measureText('OBELISKEN').width + 0.30*fontPx*9;
-      var finalPx = obxW>maxW ? fontPx*(maxW/obxW) : fontPx;
-      if(finalPx!==fontPx) EL.wm.style.fontSize=finalPx.toFixed(1)+'px';
-      EL.wmbox.style.top=(baseCss+finalPx*0.12).toFixed(1)+'px';
-
-      var mid=proj(rot([0,3.5,0]));
-      var wl=proj(rot([-0.55,3.5,0])), wr=proj(rot([0.55,3.5,0]));
-      var objW=Math.abs(wr[0]-wl[0])/DPR;
-      var gx=mid[0]/DPR, gy=mid[1]/DPR;
-      var rx=(objW*4.0).toFixed(0), ry=(objH*0.85).toFixed(0);
-      var vrx=(objW*5.0).toFixed(0), vry=(objH*1.1).toFixed(0);
-      var g0=lc([26,25,24],[255,255,255],mix), g1=lc([16,15,14],[250,250,252],mix),
-          g2=lc([10,10,11],[242,242,245],mix), g3=lc([10,10,12],[238,240,242],mix);
-      function rgb(c){return 'rgb('+c[0]+','+c[1]+','+c[2]+')';}
-      if(blankPage){
-        if(EL.wrap) EL.wrap.style.background='#ffffff';
-        if(EL.vig) EL.vig.style.background='none';
-      } else {
-        if(EL.wrap) EL.wrap.style.background=
-          'radial-gradient('+rx+'px '+ry+'px at '+gx.toFixed(0)+'px '+gy.toFixed(0)+'px, '+rgb(g0)+' 0%, '+rgb(g1)+' 34%, '+rgb(g2)+' 62%, '+rgb(g3)+' 88%), '+rgb(g3);
-        var va1=(0.28+(0.05-0.28)*mix).toFixed(3), va2=(0.5+(0.12-0.5)*mix).toFixed(3);
-        if(EL.vig) EL.vig.style.background=
-          'radial-gradient('+vrx+'px '+vry+'px at '+gx.toFixed(0)+'px '+gy.toFixed(0)+'px, rgba(0,0,0,0) 40%, rgba(0,0,0,'+va1+') 74%, rgba(0,0,0,'+va2+') 100%)';
-      }
-
-      var word='OBELISKEN';
-      if(S.scene==='ivar') word='IVAR'; else if(S.scene==='kallax') word='KALLAX'; else if(S.scene==='pyr') word='CHEOPS';
-      if(EL.wm.textContent!==word) EL.wm.textContent=word;
-      var wc=lc([238,240,243],[22,18,12],mix);
-      EL.wm.style.color=rgb(wc);
-      EL.wm.style.mixBlendMode='normal';
-      EL.wm.style.textShadow = mix>0.5 ? 'none' : '0 0 38px rgba(120,150,200,.18)';
-      EL.wm.style.transition='none';
-      if(blankPage){ S.wmAnim=false; EL.wm.style.animation='none'; EL.wm.style.letterSpacing='.30em'; EL.wm.style.filter='none'; EL.wm.style.opacity='0'; }
-      else if(S.phase==='flip'){ S.wmAnim=false; EL.wm.style.animation='none'; EL.wm.style.letterSpacing='.30em'; EL.wm.style.filter='none'; EL.wm.style.transform='none'; EL.wm.style.opacity=S.flipLabel?'1':'0'; }
-      else if(S.phase==='fade'){ S.wmAnim=false; EL.wm.style.animation='none'; EL.wm.style.opacity=String(A._sceneAlpha); }
-      else if(!S.wmAnim){
-        S.wmAnim=true;
-        EL.wm.style.animation='none';
-        EL.wm.style.opacity='';
-        void EL.wm.offsetWidth;
-        EL.wm.style.animation='obx-wm 1.5s cubic-bezier(.16,.84,.3,1) both';
-      }
-      if(EL.nav){ EL.nav.style.color='#fff'; EL.nav.style.mixBlendMode='difference'; }
-
-      if(EL.flare){
-        if(blankPage){ EL.flare.style.background='none'; }
-        else {
-          var cool=(objW*2.2*FSPREAD), warm=(objW*2.6*FSPREAD);
-          var ca=(0.05*FINT).toFixed(3), wa=(0.045*FINT).toFixed(3);
-          EL.flare.style.mixBlendMode = mix>0.5 ? 'multiply' : 'screen';
-          EL.flare.style.background=
-            'radial-gradient('+cool.toFixed(0)+'px '+(objH*0.5*FSPREAD).toFixed(0)+'px at '+(gx-objW*0.5*FSEP).toFixed(0)+'px '+(gy-objH*0.18*FSEP).toFixed(0)+'px, rgba(70,96,150,'+ca+') 0%, rgba(70,96,150,0) 70%),'+
-            'radial-gradient('+warm.toFixed(0)+'px '+(objH*0.55*FSPREAD).toFixed(0)+'px at '+(gx+objW*0.6*FSEP).toFixed(0)+'px '+(gy+objH*0.22*FSEP).toFixed(0)+'px, rgba(168,120,72,'+wa+') 0%, rgba(168,120,72,0) 72%)';
-        }
-      }
+  // ---- pages ----
+  function setPage(name){
+    S.page=name;
+    var pages={work:EL.work, contact:EL.contact, cv:EL.cv};
+    Object.keys(pages).forEach(function(k){ var el=pages[k]; if(!el) return; var on=(k===name);
+      el.style.opacity=on?'1':'0'; el.style.pointerEvents=on?'auto':'none'; });
+    if(EL.worklink) EL.worklink.style.pointerEvents=(name==='work')?'auto':'none';
+    if(EL.mail) EL.mail.style.pointerEvents=(name==='contact')?'auto':'none';
+    [[EL.video,'work'],[EL.video2,'contact']].forEach(function(pv){ var v=pv[0]; if(!v) return;
+      if(name===pv[1]){ v.play().catch(function(){}); } else if(!v.paused){ v.pause(); } });
+    if(name==='contact' && !S.mailSet && EL.mail){
+      var u=['tom','naerland'].join('.'); var d=['gmail','com'].join('.');
+      var addr=u+String.fromCharCode(64)+d;
+      EL.mail.textContent=addr; EL.mail.href='mai'+'lto:'+addr; S.mailSet=true;
     }
   }
 
   // ---- nav handlers ----
-  function goHome(e){ e.preventDefault();
-    A.start=performance.now()-REVEAL_DUR-100; A._buildStart=undefined; A._sceneAlpha=1;
-    S.introStart=performance.now(); S.introDone=false; S.wmAnim=false; S.doneTime=undefined; S.phase='flip';
-    S.page=null; S.scene='obx'; S.bgTarget=0; S.bgT=0;
-    if(EL.nav){ EL.nav.style.opacity='1'; EL.nav.style.pointerEvents='auto'; }
-    if(EL.wm){ EL.wm.style.animation='none'; }
-  }
-  function goWork(e){ e.preventDefault(); abortIntro(); S.page='work'; S.bgTarget=1; revealMenu(); }
-  function goCV(e){ e.preventDefault(); abortIntro(); S.page='cv'; S.bgTarget=1; revealMenu(); }
-  function goContact(e){ e.preventDefault(); abortIntro(); S.page='contact'; S.bgTarget=1; revealMenu(); }
+  function goHome(e){ if(e) e.preventDefault(); setPage('work'); setUrl('/'); }
+  function goWork(e){ if(e) e.preventDefault(); setPage('work'); setUrl('/work'); }
+  function goCV(e){ if(e) e.preventDefault(); setPage('cv'); setUrl('/cv'); }
+  function goContact(e){ if(e) e.preventDefault(); setPage('contact'); setUrl('/contact'); }
   EL.home.addEventListener('click', goHome);
   EL.navwork.addEventListener('click', goWork);
   EL.navcv.addEventListener('click', goCV);
   EL.navcontact.addEventListener('click', goContact);
 
+  // ---- routes: / and /work are the same page. /work /cv /contact are real URLs: GitHub Pages serves
+  // work/index.html etc., which bounce to /#work; we open that page and rewrite the URL back to /work.
+  // Clicking nav pushes the matching path; back/forward re-apply the route. ----
+  var ROUTES={work:goWork, cv:goCV, contact:goContact};
+  function setUrl(path){
+    if(location.protocol==='file:') return;
+    try{
+      if(S._routing) history.replaceState(null,'',path);
+      else if(location.pathname+location.hash!==path) history.pushState(null,'',path);
+    }catch(e){}
+  }
+  function routeFromLocation(){
+    var h=location.hash.replace(/^#\/?/,'').toLowerCase();
+    var p=location.pathname.replace(/^\/|\/$/g,'').toLowerCase();
+    return ROUTES[h]?h:(ROUTES[p]?p:'');
+  }
+  function applyRoute(){ var r=routeFromLocation(); S._routing=true; try{ (ROUTES[r]||goHome)(); } finally{ S._routing=false; } }
+  window.addEventListener('popstate', applyRoute);
+
   // ---- boot ----
   A.faces = buildScene();
-  A.shelfFaces = buildShelf();
-  A.kallaxFaces = buildKallax();
-  A.pyrFaces = buildPyramid();
-  A.ctx = EL.canvas.getContext('2d');
   A.octx = EL.workcanvas ? EL.workcanvas.getContext('2d') : null;
-  A.start = performance.now() - REVEAL_DUR - 100;
-  S.introStart = performance.now(); S.introDone = false;
   resize();
   window.addEventListener('resize', resize);
-  (function loop(t){ try{ renderCanvas(t); if(S.introDone && S.page==='work') renderOverlay(t); }catch(e){ /* keep running */ } requestAnimationFrame(loop); })(performance.now());
+  applyRoute();
+  (function loop(t){
+    try{
+      if(S.page==='work'){ renderOverlay(t); if(EL.video && EL.video.paused) EL.video.play().catch(function(){}); }
+      else if(S.page==='contact' && EL.video2 && EL.video2.paused){ EL.video2.play().catch(function(){}); }
+    }catch(e){ /* keep running */ }
+    requestAnimationFrame(loop);
+  })(performance.now());
 })();
 </script>
 </body>
