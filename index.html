@@ -171,7 +171,10 @@
              ambient:0.36, key:0.42, rim:0.25, edge:0.38 };
   var LENS_DEPTH=[-0.05,5.62,0.255];   // upper head: the depth camera's lens rim
   var LENS_PROJ =[-0.10,5.02,0.355];   // lower head: the projector's lens rim
-  var CAPTION=['THE BODY IS MEASURED IN 3D','THE IMAGE IS RE-RENDERED FROM',"THE PROJECTOR'S OWN VIEWPOINT"];
+  var CAPTION=['A DEPTH CAMERA MAPS THE BODY.',
+               'CAMERA AND PROJECTOR INTRINSICS',
+               'ARE CALIBRATED, SO THE 3D SCENE',
+               'REPROJECTS INTO WORLD SPACE'];
   function renderOverlay(t){
     var cv=EL.workcanvas, ctx=A.octx; if(!cv||!ctx) return;
     var W=cv.width,H=cv.height; ctx.clearRect(0,0,W,H);
@@ -258,7 +261,7 @@
     var tfs=fs*1.45;
     var bx    = narrow ? W*0.5   : W-M;
     var align = narrow ? 'center': 'right';
-    var capY  = H*(narrow?0.879:0.753) - 2*fs*1.85;
+    var capY  = H*(narrow?0.879:0.753) - (CAPTION.length-1)*fs*1.85;
     var by    = capY - fs*2.3 - tfs*1.35;
     text('OBELISKEN',    bx, by,          align, .92, tfs, 0.18);
     text('REPROJECTION', bx, by+tfs*1.35, align, .92, tfs, 0.18);
