@@ -32,7 +32,6 @@
     </video>
     <canvas id="obx-workcanvas" style="position:absolute;inset:0;width:100%;height:100%;display:block;mix-blend-mode:difference;pointer-events:none;"></canvas>
     <div id="obx-worktext" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:14px;pointer-events:none;font-family:'Martian Mono',monospace;color:#fff;mix-blend-mode:difference;padding-bottom:18vh;">
-      <div style="font-size:11px;letter-spacing:.28em;text-transform:uppercase;color:rgba(255,255,255,.55);">Work</div>
       <a id="obx-worklink" href="https://vimeo.com/tomana" target="_blank" rel="noopener" style="font-size:clamp(18px,2.4vw,30px);letter-spacing:.04em;color:#fff;text-decoration:none;border-bottom:1px solid rgba(255,255,255,.4);padding-bottom:2px;">vimeo.com/tomana</a>
     </div>
   </div>
@@ -221,10 +220,9 @@
       ctx.fillStyle='rgba(255,255,255,'+alpha+')'; ctx.fillText(str,x,y); ctx.restore();
     }
 
-    // targets are offsets from the rig, not absolute page fractions, so the cones stay beside the
-    // rig instead of reaching across the middle of the frame
-    var BD=beam(pDepth, rigX-H*0.42, rigY+H*0.30, H*0.100);   // depth camera measuring the surface
-    var BP=beam(pProj,  rigX-H*0.46, rigY+H*0.38, H*0.115);   // projector putting the image back on it
+    // the rig holds its corner, but the cones reach across to the middle of the frame, where the body is
+    var BD=beam(pDepth, W*0.50, H*0.47, H*0.110);   // depth camera measuring the surface
+    var BP=beam(pProj,  W*0.47, H*0.57, H*0.130);   // projector putting the image back on it
 
     var mid=[(BP.a[0]+BP.b[0])/2,(BP.a[1]+BP.b[1])/2];
     var grad=ctx.createLinearGradient(pProj[0],pProj[1],mid[0],mid[1]);
@@ -244,22 +242,27 @@
     // labels swing to the far side of their beams and the caption drops into the dark band under
     // the link, where white type reads brightly instead of fighting the body.
     var narrow=(W/H)<0.9;
-    var lD=BD.at(0.26, fs*1.7), lP=BP.at(0.50, fs*1.7);
+    // portrait puts the rig right where the near end of each cone is, so the labels slide further
+    // down their beams and further off-axis to clear it
+    var lD=BD.at(narrow?0.45:0.20, fs*(narrow?3.6:1.7));
+    var lP=BP.at(narrow?0.60:0.38, fs*(narrow?2.2:1.7));
     text('DEPTH IN',  lD[0], lD[1], 'center', narrow?.85:.66);
     text('LIGHT OUT', lP[0], lP[1], 'center', narrow?.85:.66);
 
-    // title under the rig, right-aligned to the same gutter
-    var tfs=fs*1.45, tY=rigBot+tfs*1.7;
-    text('OBELISKEN',    W-M, tY,           'right', .92, tfs, 0.18);
-    text('REPROJECTION', W-M, tY+tfs*1.35,  'right', .92, tfs, 0.18);
-
-    // a portrait viewport crops the video too tight for the explanation to sit beside the rig, so
-    // there it drops into the dark band under the link, where white type reads brightly
-    var capX     = narrow ? W*0.5   : W-M;
-    var capY     = narrow ? H*0.735 : tY+tfs*1.35+fs*2.3;
-    var capA     = narrow ? .8      : .5;
-    var capAlign = narrow ? 'center' : 'right';
-    CAPTION.forEach(function(line,i){ text(line, capX, capY+i*fs*1.85, capAlign, capA); });
+    // One block: OBELISKEN / REPROJECTION heads the explanation and travels with it. Landscape sets
+    // it under the rig against the same gutter; a portrait viewport has no room beside the rig, so
+    // the block centres in the band above the link instead.
+    // The block is anchored from its BOTTOM: its last line lands on the baseline the old "WORK"
+    // label used to sit on, just above the link, so the two read as one column. Everything above
+    // (the two title lines) stacks upward from there.
+    var tfs=fs*1.45;
+    var bx    = narrow ? W*0.5   : W-M;
+    var align = narrow ? 'center': 'right';
+    var capY  = H*(narrow?0.879:0.753) - 2*fs*1.85;
+    var by    = capY - fs*2.3 - tfs*1.35;
+    text('OBELISKEN',    bx, by,          align, .92, tfs, 0.18);
+    text('REPROJECTION', bx, by+tfs*1.35, align, .92, tfs, 0.18);
+    CAPTION.forEach(function(line,i){ text(line, bx, capY+i*fs*1.85, align, narrow?.8:.5); });
   }
 
 
