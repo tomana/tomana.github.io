@@ -169,7 +169,7 @@
   // ambient is the unlit face, key the lit one, rim the grazing highlight, edge the wireframe line.
   // The graphic is STILL - the video behind it carries all the movement the page needs. Nothing
   // here depends on time, so the canvas is painted on demand rather than every frame.
-  var OV = { dist:31.7, gutter:20, halfW:0.065, halfH:0.1672,
+  var OV = { dist:31.7, gutter:20, drop:30, halfW:0.065, halfH:0.1672,
              ambient:0.36, key:0.42, rim:0.25, edge:0.38, converge:0.25 };
   var LENS_DEPTH=[-0.05,5.62,0.255];   // upper head: the depth camera's lens rim
   var LENS_PROJ =[-0.10,5.02,0.355];   // lower head: the projector's lens rim
@@ -181,7 +181,7 @@
     var cv=EL.workcanvas, ctx=A.octx; if(!cv||!ctx) return;
     var W=cv.width,H=cv.height; ctx.clearRect(0,0,W,H);
     var M=OV.gutter*DPR, halfW=H*OV.halfW, halfH=H*OV.halfH;
-    var rigX=W-M-halfW, rigY=M+halfH, rigBot=rigY+halfH;
+    var rigX=W-M-halfW, rigY=M+halfH+OV.drop*DPR;   // drop: px below the top gutter
     var cam={yaw:-0.50, pitch:0.085, yCenter:3.95,
              camDist:OV.dist, fovy:0.55, ox:rigX, oy:rigY};
     var V=makeView(cam,W,H);
