@@ -31,7 +31,7 @@
       <source src="obelisken.mp4" type="video/mp4">
     </video>
     <canvas id="obx-workcanvas" style="position:absolute;inset:0;width:100%;height:100%;display:block;mix-blend-mode:difference;pointer-events:none;"></canvas>
-    <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:14px;pointer-events:none;font-family:'Martian Mono',monospace;color:#fff;mix-blend-mode:difference;padding-bottom:18vh;">
+    <div id="obx-worktext" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:14px;pointer-events:none;font-family:'Martian Mono',monospace;color:#fff;mix-blend-mode:difference;padding-bottom:18vh;">
       <div style="font-size:11px;letter-spacing:.28em;text-transform:uppercase;color:rgba(255,255,255,.55);">Work</div>
       <a id="obx-worklink" href="https://vimeo.com/tomana" target="_blank" rel="noopener" style="font-size:clamp(18px,2.4vw,30px);letter-spacing:.04em;color:#fff;text-decoration:none;border-bottom:1px solid rgba(255,255,255,.4);padding-bottom:2px;">vimeo.com/tomana</a>
     </div>
@@ -61,7 +61,7 @@
 (function(){
   // ---- element handles ----
   var EL = {};
-  ['wrap','nav','work','video','worklink','workcanvas','contact','video2','mail','cv',
+  ['wrap','nav','work','video','worklink','workcanvas','worktext','contact','video2','mail','cv',
    'navwork','navcv','navcontact'].forEach(function(k){ EL[k]=document.getElementById('obx-'+k); });
 
   var DPR=Math.min(window.devicePixelRatio||1, 2);
@@ -162,15 +162,24 @@
   // width), so dist sets it as a fraction of page height; inset and top are fractions of HEIGHT
   // too, which keeps the corner margins proportional to the rig itself on any viewport.
   // swing = half the sweep in radians (0.16 rad ~ 9 deg, so an 18-deg oscillation); rate sets its period.
-  var OV = { rate:0.00028, swing:0.16, dist:31.7, inset:0.13, top:0.235 };  // ~1/3 page height, ~22s sweep
+  // gutter matches the nav's 20px, so the rig hugs the top-right corner the way the menu hugs the
+  // top-left and keeps that gutter at every window size. halfW/halfH are the rig's own on-screen
+  // half-extents as fractions of page height (halfW allows for the widest point of the sway).
+  // tone: the rig is drawn in greys, not white. Over the near-black right side of the frame the
+  // difference blend passes the fill through almost unchanged, so these ARE the on-screen values -
+  // ambient is the unlit face, key the lit one, rim the grazing highlight, edge the wireframe line.
+  var OV = { rate:0.00028, swing:0.16, dist:31.7, gutter:20, halfW:0.065, halfH:0.1672,
+             ambient:0.36, key:0.42, rim:0.25, edge:0.38 };
   var LENS_DEPTH=[-0.05,5.62,0.255];   // upper head: the depth camera's lens rim
   var LENS_PROJ =[-0.10,5.02,0.355];   // lower head: the projector's lens rim
   var CAPTION=['THE BODY IS MEASURED IN 3D','THE IMAGE IS RE-RENDERED FROM',"THE PROJECTOR'S OWN VIEWPOINT"];
   function renderOverlay(t){
     var cv=EL.workcanvas, ctx=A.octx; if(!cv||!ctx) return;
     var W=cv.width,H=cv.height; ctx.clearRect(0,0,W,H);
+    var M=OV.gutter*DPR, halfW=H*OV.halfW, halfH=H*OV.halfH;
+    var rigX=W-M-halfW, rigY=M+halfH, rigBot=rigY+halfH;
     var cam={yaw:-0.50+Math.sin(t*OV.rate)*OV.swing, pitch:0.085+Math.sin(t*0.00017)*0.012, yCenter:3.95,
-             camDist:OV.dist, fovy:0.55, ox:W-H*OV.inset, oy:H*OV.top};
+             camDist:OV.dist, fovy:0.55, ox:rigX, oy:rigY};
     var V=makeView(cam,W,H);
     var lw=[-0.35,0.92,0.42]; var ll=Math.hypot(lw[0],lw[1],lw[2]); var L=V.rl([lw[0]/ll,lw[1]/ll,lw[2]/ll]);
     var faces=A.faces, draw=[];
@@ -183,7 +192,7 @@
       if(facing<=0.02) continue;
       var diff=Math.max(0,n[0]*L[0]+n[1]*L[1]+n[2]*L[2]);
       var fres=Math.pow(1-Math.min(1,facing),3);
-      var v=Math.min(1,0.42+0.5*diff+0.3*fres);          // white = full inversion, grey = partial
+      var v=Math.min(1,OV.ambient+OV.key*diff+OV.rim*fres);
       draw.push({cz:cz,fi:i,s:cvp.map(V.proj),v:v});
     }
     draw.sort(function(a,b){var d=a.cz-b.cz; return Math.abs(d)>1e-4?d:a.fi-b.fi;});
@@ -191,7 +200,7 @@
       var dd=draw[d], s=dd.s; ctx.beginPath(); ctx.moveTo(s[0][0],s[0][1]);
       for(var si=1;si<s.length;si++) ctx.lineTo(s[si][0],s[si][1]); ctx.closePath();
       var g=Math.round(dd.v*255); ctx.fillStyle='rgb('+g+','+g+','+g+')'; ctx.fill();
-      ctx.lineWidth=Math.max(0.6,DPR*0.6); ctx.strokeStyle='rgba(255,255,255,.45)'; ctx.stroke();
+      ctx.lineWidth=Math.max(0.6,DPR*0.6); ctx.strokeStyle='rgba(255,255,255,'+OV.edge+')'; ctx.stroke();
     }
 
     // ---- what the rig is doing: sensing cone out to the body, projection cone back onto it ----
@@ -203,16 +212,19 @@
       return { a:[tx+nx*sp,ty+ny*sp], b:[tx-nx*sp,ty-ny*sp],
                at:function(f,o){ return [p[0]+dx*f+nx*o, p[1]+dy*f+ny*o]; } };
     }
-    function text(str,x,y,align,alpha){
+    function text(str,x,y,align,alpha,size,track){
+      var sz=size||fs;
       ctx.save();
-      ctx.font='400 '+fs.toFixed(1)+"px 'Martian Mono', monospace";
-      try{ ctx.letterSpacing=(fs*0.12).toFixed(2)+'px'; }catch(e){}
+      ctx.font='400 '+sz.toFixed(1)+"px 'Martian Mono', monospace";
+      try{ ctx.letterSpacing=(sz*(track||0.12)).toFixed(2)+'px'; }catch(e){}
       ctx.textAlign=align; ctx.textBaseline='middle';
       ctx.fillStyle='rgba(255,255,255,'+alpha+')'; ctx.fillText(str,x,y); ctx.restore();
     }
 
-    var BD=beam(pDepth, W*0.47, H*0.50, H*0.115);   // depth camera measuring the surface
-    var BP=beam(pProj,  W*0.45, H*0.58, H*0.135);   // projector putting the image back on it
+    // targets are offsets from the rig, not absolute page fractions, so the cones stay beside the
+    // rig instead of reaching across the middle of the frame
+    var BD=beam(pDepth, rigX-H*0.42, rigY+H*0.30, H*0.100);   // depth camera measuring the surface
+    var BP=beam(pProj,  rigX-H*0.46, rigY+H*0.38, H*0.115);   // projector putting the image back on it
 
     var mid=[(BP.a[0]+BP.b[0])/2,(BP.a[1]+BP.b[1])/2];
     var grad=ctx.createLinearGradient(pProj[0],pProj[1],mid[0],mid[1]);
@@ -232,14 +244,20 @@
     // labels swing to the far side of their beams and the caption drops into the dark band under
     // the link, where white type reads brightly instead of fighting the body.
     var narrow=(W/H)<0.9;
-    var lD=BD.at(narrow?0.45:0.34, narrow? fs*3.2 : -fs*1.25);
-    var lP=BP.at(narrow?0.62:0.62, fs*1.45);
-    text('DEPTH IN',  lD[0], lD[1], 'center', narrow?.85:.62);
-    text('LIGHT OUT', lP[0], lP[1], 'center', narrow?.85:.62);
+    var lD=BD.at(0.26, fs*1.7), lP=BP.at(0.50, fs*1.7);
+    text('DEPTH IN',  lD[0], lD[1], 'center', narrow?.85:.66);
+    text('LIGHT OUT', lP[0], lP[1], 'center', narrow?.85:.66);
 
-    var capX     = narrow ? W*0.5    : W-H*0.07;
-    var capY     = narrow ? H*0.855  : base[1]+fs*2.4;
-    var capA     = narrow ? .8       : .5;
+    // title under the rig, right-aligned to the same gutter
+    var tfs=fs*1.45, tY=rigBot+tfs*1.7;
+    text('OBELISKEN',    W-M, tY,           'right', .92, tfs, 0.18);
+    text('REPROJECTION', W-M, tY+tfs*1.35,  'right', .92, tfs, 0.18);
+
+    // a portrait viewport crops the video too tight for the explanation to sit beside the rig, so
+    // there it drops into the dark band under the link, where white type reads brightly
+    var capX     = narrow ? W*0.5   : W-M;
+    var capY     = narrow ? H*0.735 : tY+tfs*1.35+fs*2.3;
+    var capA     = narrow ? .8      : .5;
     var capAlign = narrow ? 'center' : 'right';
     CAPTION.forEach(function(line,i){ text(line, capX, capY+i*fs*1.85, capAlign, capA); });
   }
@@ -249,6 +267,8 @@
     var cv=EL.workcanvas, w=EL.wrap; if(!cv||!w) return;
     var W=w.clientWidth||window.innerWidth, H=w.clientHeight||window.innerHeight;
     cv.width=Math.round(W*DPR); cv.height=Math.round(H*DPR);
+    // Portrait: the canvas caption occupies the band above, so the Work label and link sit under it.
+    if(EL.worktext) EL.worktext.style.paddingBottom = ((W/H)<0.9 ? '5vh' : '18vh');
   }
 
   // ---- pages ----
