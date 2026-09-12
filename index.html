@@ -20,7 +20,7 @@
 <div id="obx-wrap" style="position:fixed;top:0;left:0;right:0;height:100vh;height:100svh;background:#000;font-family:'Archivo',sans-serif;overflow:hidden;">
 
   <nav id="obx-nav" style="position:absolute;top:20px;left:20px;z-index:20;display:flex;flex-direction:column;gap:6px;font-family:'Martian Mono',monospace;color:#fff;mix-blend-mode:difference;opacity:1;transition:opacity .45s ease;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;text-rendering:optimizeLegibility;">
-    <a id="obx-home" href="#" style="font-size:14px;font-weight:400;letter-spacing:.10em;text-transform:none;text-decoration:none;color:currentColor;opacity:1;transition:opacity .25s;width:fit-content;padding:10px 0;line-height:1;">Tom Nærland</a>
+    <div style="font-size:14px;font-weight:400;letter-spacing:.10em;color:currentColor;width:fit-content;padding:10px 0;line-height:1;">Tom Nærland</div>
     <a id="obx-navwork" href="#" style="font-size:14px;font-weight:400;letter-spacing:.14em;text-transform:uppercase;text-decoration:none;color:currentColor;opacity:1;transition:opacity .25s;width:fit-content;padding:10px 0;line-height:1;">Work</a>
     <a id="obx-navcv" href="#" style="font-size:14px;font-weight:400;letter-spacing:.14em;text-transform:uppercase;text-decoration:none;color:currentColor;opacity:1;transition:opacity .25s;width:fit-content;padding:10px 0;line-height:1;">CV</a>
     <a id="obx-navcontact" href="#" style="font-size:14px;font-weight:400;letter-spacing:.14em;text-transform:uppercase;text-decoration:none;color:currentColor;opacity:1;transition:opacity .25s;width:fit-content;padding:10px 0;line-height:1;">Contact</a>
@@ -62,7 +62,7 @@
   // ---- element handles ----
   var EL = {};
   ['wrap','nav','work','video','worklink','workcanvas','contact','video2','mail','cv',
-   'home','navwork','navcv','navcontact'].forEach(function(k){ EL[k]=document.getElementById('obx-'+k); });
+   'navwork','navcv','navcontact'].forEach(function(k){ EL[k]=document.getElementById('obx-'+k); });
 
   var DPR=Math.min(window.devicePixelRatio||1, 2);
   var A = { faces:[], octx:null };
@@ -212,12 +212,13 @@
   }
 
   // ---- nav handlers ----
-  function goHome(e){ if(e) e.preventDefault(); setPage('work'); setUrl('/'); }
+  // The Work page IS the main page: clicking Work goes to "/". Landing on "/work" keeps that
+  // path (it is a valid alias), so a shared /work link stays what the visitor sees in the bar.
+  function goMain(e){ if(e) e.preventDefault(); setPage('work'); setUrl('/'); }
   function goWork(e){ if(e) e.preventDefault(); setPage('work'); setUrl('/work'); }
   function goCV(e){ if(e) e.preventDefault(); setPage('cv'); setUrl('/cv'); }
   function goContact(e){ if(e) e.preventDefault(); setPage('contact'); setUrl('/contact'); }
-  EL.home.addEventListener('click', goHome);
-  EL.navwork.addEventListener('click', goWork);
+  EL.navwork.addEventListener('click', goMain);
   EL.navcv.addEventListener('click', goCV);
   EL.navcontact.addEventListener('click', goContact);
 
@@ -237,7 +238,7 @@
     var p=location.pathname.replace(/^\/|\/$/g,'').toLowerCase();
     return ROUTES[h]?h:(ROUTES[p]?p:'');
   }
-  function applyRoute(){ var r=routeFromLocation(); S._routing=true; try{ (ROUTES[r]||goHome)(); } finally{ S._routing=false; } }
+  function applyRoute(){ var r=routeFromLocation(); S._routing=true; try{ (ROUTES[r]||goMain)(); } finally{ S._routing=false; } }
   window.addEventListener('popstate', applyRoute);
 
   // ---- boot ----
