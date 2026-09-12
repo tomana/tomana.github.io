@@ -168,7 +168,7 @@
   // difference blend passes the fill through almost unchanged, so these ARE the on-screen values -
   // ambient is the unlit face, key the lit one, rim the grazing highlight, edge the wireframe line.
   var OV = { rate:0.00028, swing:0.16, dist:31.7, gutter:20, halfW:0.065, halfH:0.1672,
-             ambient:0.36, key:0.42, rim:0.25, edge:0.38 };
+             ambient:0.36, key:0.42, rim:0.25, edge:0.38, converge:0.25 };
   var LENS_DEPTH=[-0.05,5.62,0.255];   // upper head: the depth camera's lens rim
   var LENS_PROJ =[-0.10,5.02,0.355];   // lower head: the projector's lens rim
   var CAPTION=['REALTIME PROCESSING WITH',
@@ -208,6 +208,12 @@
     // ---- what the rig is doing: sensing cone out to the body, projection cone back onto it ----
     var fs=Math.max(9*DPR, Math.min(13*DPR, H*0.0135));
     var pDepth=V.proj(V.rot(LENS_DEPTH)), pProj=V.proj(V.rot(LENS_PROJ)), base=V.proj(V.rot([0,0,0]));
+    // The cones spring from a point nudged slightly toward the other head, so the two apexes sit
+    // closer together than the lenses themselves. The LABELS stay on the true lens heights, which
+    // keeps them from crowding each other as the origins converge.
+    function towardMid(a,b,t){ return [a[0]+((a[0]+b[0])/2-a[0])*t, a[1]+((a[1]+b[1])/2-a[1])*t, a[2]+((a[2]+b[2])/2-a[2])*t]; }
+    var oDepth=V.proj(V.rot(towardMid(LENS_DEPTH,LENS_PROJ,OV.converge)));
+    var oProj =V.proj(V.rot(towardMid(LENS_PROJ,LENS_DEPTH,OV.converge)));
 
     function beam(p,tx,ty,sp){
       var dx=tx-p[0], dy=ty-p[1], l=Math.hypot(dx,dy)||1, nx=-dy/l, ny=dx/l;
@@ -224,19 +230,19 @@
     }
 
     // the rig holds its corner, but the cones reach across to the middle of the frame, where the body is
-    var BD=beam(pDepth, W*0.50, H*0.47, H*0.110);   // depth camera measuring the surface
-    var BP=beam(pProj,  W*0.47, H*0.57, H*0.130);   // projector putting the image back on it
+    var BD=beam(oDepth, W*0.50, H*0.47, H*0.110);   // depth camera measuring the surface
+    var BP=beam(oProj,  W*0.47, H*0.57, H*0.130);   // projector putting the image back on it
 
     var mid=[(BP.a[0]+BP.b[0])/2,(BP.a[1]+BP.b[1])/2];
-    var grad=ctx.createLinearGradient(pProj[0],pProj[1],mid[0],mid[1]);
+    var grad=ctx.createLinearGradient(oProj[0],oProj[1],mid[0],mid[1]);
     grad.addColorStop(0,'rgba(255,255,255,.15)'); grad.addColorStop(1,'rgba(255,255,255,0)');
     ctx.fillStyle=grad; ctx.beginPath();
-    ctx.moveTo(pProj[0],pProj[1]); ctx.lineTo(BP.a[0],BP.a[1]); ctx.lineTo(BP.b[0],BP.b[1]);
+    ctx.moveTo(oProj[0],oProj[1]); ctx.lineTo(BP.a[0],BP.a[1]); ctx.lineTo(BP.b[0],BP.b[1]);
     ctx.closePath(); ctx.fill();
 
     ctx.save(); ctx.setLineDash([6*DPR,5*DPR]); ctx.lineWidth=Math.max(1,DPR);
     ctx.strokeStyle='rgba(255,255,255,.34)'; ctx.beginPath();
-    ctx.moveTo(BD.a[0],BD.a[1]); ctx.lineTo(pDepth[0],pDepth[1]); ctx.lineTo(BD.b[0],BD.b[1]);
+    ctx.moveTo(BD.a[0],BD.a[1]); ctx.lineTo(oDepth[0],oDepth[1]); ctx.lineTo(BD.b[0],BD.b[1]);
     ctx.stroke(); ctx.restore();
 
     // A portrait viewport crops the video tight, so there is no dark margin to set text against:
