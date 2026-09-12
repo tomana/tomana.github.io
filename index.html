@@ -264,7 +264,7 @@
     var capY  = H*(narrow?0.879:0.753) - (CAPTION.length-1)*fs*1.85;
     var by    = capY - fs*2.3 - tfs*1.35;
     text('OBELISKEN',    bx, by,          align, .92, tfs, 0.18);
-    text('REPROJECTION', bx, by+tfs*1.35, align, .92, tfs, 0.18);
+    text('REPROJECTION:', bx, by+tfs*1.35, align, .92, tfs, 0.18);
     CAPTION.forEach(function(line,i){ text(line, bx, capY+i*fs*1.85, align, narrow?.8:.5); });
   }
 
