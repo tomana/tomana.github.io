@@ -173,8 +173,8 @@
   var LENS_PROJ =[-0.10,5.02,0.355];   // lower head: the projector's lens rim
   var CAPTION=['REALTIME PROCESSING WITH',
                'CAMERA-PROJECTOR INTRINSICS,',
-               'MAPPING DEPTH DATA BACK',
-               'INTO WORLD SPACE'];
+               'MAPPING DEPTH DATA AND ATTACHED',
+               'GRAPHICS BACK INTO WORLD SPACE'];
   function renderOverlay(t){
     var cv=EL.workcanvas, ctx=A.octx; if(!cv||!ctx) return;
     var W=cv.width,H=cv.height; ctx.clearRect(0,0,W,H);
