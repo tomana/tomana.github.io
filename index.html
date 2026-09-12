@@ -235,7 +235,7 @@
     // end on the SAME phase turns that into real motion: the cones rake across the body as the
     // heads turn, instead of pivoting on a pinned target.
     var sweep=Math.sin(t*OV.rate)*H*OV.sweep;
-    var BD=beam(oDepth, W*0.50+sweep, H*0.47, H*0.110);   // depth camera measuring the surface
+    var BD=beam(oDepth, W*0.455+sweep, H*0.505, H*0.115);  // depth camera measuring the surface
     var BP=beam(oProj,  W*0.47+sweep, H*0.57, H*0.130);   // projector putting the image back on it
 
     var mid=[(BP.a[0]+BP.b[0])/2,(BP.a[1]+BP.b[1])/2];
@@ -245,9 +245,18 @@
     ctx.moveTo(oProj[0],oProj[1]); ctx.lineTo(BP.a[0],BP.a[1]); ctx.lineTo(BP.b[0],BP.b[1]);
     ctx.closePath(); ctx.fill();
 
+    // The dashed cone fades out along its length instead of stopping dead mid-frame, and each leg
+    // is stroked from the APEX outward. Drawing it as one a->apex->b path started the dash pattern
+    // at the far end, the end that sweeps furthest, which is what made the dashes crawl.
+    var dmid=[(BD.a[0]+BD.b[0])/2,(BD.a[1]+BD.b[1])/2];
+    var dg=ctx.createLinearGradient(oDepth[0],oDepth[1],dmid[0],dmid[1]);
+    dg.addColorStop(0,   'rgba(255,255,255,.40)');
+    dg.addColorStop(0.45,'rgba(255,255,255,.28)');
+    dg.addColorStop(1,   'rgba(255,255,255,0)');
     ctx.save(); ctx.setLineDash([6*DPR,5*DPR]); ctx.lineWidth=Math.max(1,DPR);
-    ctx.strokeStyle='rgba(255,255,255,.34)'; ctx.beginPath();
-    ctx.moveTo(BD.a[0],BD.a[1]); ctx.lineTo(oDepth[0],oDepth[1]); ctx.lineTo(BD.b[0],BD.b[1]);
+    ctx.strokeStyle=dg; ctx.beginPath();
+    ctx.moveTo(oDepth[0],oDepth[1]); ctx.lineTo(BD.a[0],BD.a[1]);
+    ctx.moveTo(oDepth[0],oDepth[1]); ctx.lineTo(BD.b[0],BD.b[1]);
     ctx.stroke(); ctx.restore();
 
     // A portrait viewport crops the video tight, so there is no dark margin to set text against:
