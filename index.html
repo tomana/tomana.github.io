@@ -167,21 +167,22 @@
   // tone: the rig is drawn in greys, not white. Over the near-black right side of the frame the
   // difference blend passes the fill through almost unchanged, so these ARE the on-screen values -
   // ambient is the unlit face, key the lit one, rim the grazing highlight, edge the wireframe line.
-  var OV = { rate:0.00040, swing:0.175, dist:31.7, gutter:20, halfW:0.065, halfH:0.1672,
-             ambient:0.36, key:0.42, rim:0.25, edge:0.38, converge:0.25,
-             sweep:0.115 };   // how far the far end of each cone swings, as a fraction of page height
+  // The graphic is STILL - the video behind it carries all the movement the page needs. Nothing
+  // here depends on time, so the canvas is painted on demand rather than every frame.
+  var OV = { dist:31.7, gutter:20, halfW:0.065, halfH:0.1672,
+             ambient:0.36, key:0.42, rim:0.25, edge:0.38, converge:0.25 };
   var LENS_DEPTH=[-0.05,5.62,0.255];   // upper head: the depth camera's lens rim
   var LENS_PROJ =[-0.10,5.02,0.355];   // lower head: the projector's lens rim
   var CAPTION=['REALTIME PROCESSING WITH',
                'CAMERA-PROJECTOR INTRINSICS,',
                'MAPPING DEPTH DATA AND ATTACHED',
                'GRAPHICS BACK INTO WORLD SPACE'];
-  function renderOverlay(t){
+  function renderOverlay(){
     var cv=EL.workcanvas, ctx=A.octx; if(!cv||!ctx) return;
     var W=cv.width,H=cv.height; ctx.clearRect(0,0,W,H);
     var M=OV.gutter*DPR, halfW=H*OV.halfW, halfH=H*OV.halfH;
     var rigX=W-M-halfW, rigY=M+halfH, rigBot=rigY+halfH;
-    var cam={yaw:-0.50+Math.sin(t*OV.rate)*OV.swing, pitch:0.085+Math.sin(t*0.00017)*0.012, yCenter:3.95,
+    var cam={yaw:-0.50, pitch:0.085, yCenter:3.95,
              camDist:OV.dist, fovy:0.55, ox:rigX, oy:rigY};
     var V=makeView(cam,W,H);
     var lw=[-0.35,0.92,0.42]; var ll=Math.hypot(lw[0],lw[1],lw[2]); var L=V.rl([lw[0]/ll,lw[1]/ll,lw[2]/ll]);
@@ -231,12 +232,8 @@
     }
 
     // the rig holds its corner, but the cones reach across to the middle of the frame, where the body is
-    // The apexes already swing, being 3D points seen through the swaying camera. Sweeping the far
-    // end on the SAME phase turns that into real motion: the cones rake across the body as the
-    // heads turn, instead of pivoting on a pinned target.
-    var sweep=Math.sin(t*OV.rate)*H*OV.sweep;
-    var BD=beam(oDepth, W*0.455+sweep, H*0.505, H*0.115);  // depth camera measuring the surface
-    var BP=beam(oProj,  W*0.47+sweep, H*0.57, H*0.130);   // projector putting the image back on it
+    var BD=beam(oDepth, W*0.455, H*0.505, H*0.115);   // depth camera measuring the surface
+    var BP=beam(oProj,  W*0.47,  H*0.57,  H*0.130);   // projector putting the image back on it
 
     var mid=[(BP.a[0]+BP.b[0])/2,(BP.a[1]+BP.b[1])/2];
     var grad=ctx.createLinearGradient(oProj[0],oProj[1],mid[0],mid[1]);
@@ -295,6 +292,7 @@
     cv.width=Math.round(W*DPR); cv.height=Math.round(H*DPR);
     // Portrait: the canvas caption occupies the band above, so the Work label and link sit under it.
     if(EL.worktext) EL.worktext.style.paddingBottom = ((W/H)<0.9 ? '5vh' : '18vh');
+    if(S.page==='work') renderOverlay();   // sizing the canvas clears it
   }
 
   // ---- pages ----
@@ -310,6 +308,7 @@
   function setPage(name){
     S.page=name;
     setNav(name);
+    if(name==='work') renderOverlay();
     var pages={work:EL.work, contact:EL.contact, cv:EL.cv};
     Object.keys(pages).forEach(function(k){ var el=pages[k]; if(!el) return; var on=(k===name);
       el.style.opacity=on?'1':'0'; el.style.pointerEvents=on?'auto':'none'; });
@@ -358,9 +357,14 @@
   resize();
   window.addEventListener('resize', resize);
   applyRoute();
+  // Canvas text falls back to a system font if it paints before the webfont arrives, and with no
+  // per-frame redraw nothing would correct it later.
+  if(document.fonts && document.fonts.ready){
+    document.fonts.ready.then(function(){ if(S.page==='work') renderOverlay(); });
+  }
   (function loop(t){
     try{
-      if(S.page==='work'){ renderOverlay(t); if(EL.video && EL.video.paused) EL.video.play().catch(function(){}); }
+      if(S.page==='work' && EL.video && EL.video.paused){ EL.video.play().catch(function(){}); }
       else if(S.page==='contact' && EL.video2 && EL.video2.paused){ EL.video2.play().catch(function(){}); }
     }catch(e){ /* keep running */ }
     requestAnimationFrame(loop);
