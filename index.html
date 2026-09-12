@@ -242,12 +242,12 @@
     // labels swing to the far side of their beams and the caption drops into the dark band under
     // the link, where white type reads brightly instead of fighting the body.
     var narrow=(W/H)<0.9;
-    // portrait puts the rig right where the near end of each cone is, so the labels slide further
-    // down their beams and further off-axis to clear it
-    var lD=BD.at(narrow?0.38:0.145, fs*(narrow?4.2:1.7));
-    var lP=BP.at(narrow?0.50:0.18, fs*(narrow?3.0:1.7));
-    text('DEPTH IN',  lD[0], lD[1], 'center', narrow?.85:.66);
-    text('LIGHT OUT', lP[0], lP[1], 'center', narrow?.85:.66);
+    // Both labels sit at the top-left of the rig, right-aligned just outside its widest point, each
+    // held at the height of the lens it names (the tower tapers, so up there the gap is wider than
+    // it looks). They part a little vertically because the two lenses are only a head apart.
+    var labX=rigX-halfW-8*DPR;
+    text('DEPTH IN',  labX, pDepth[1]-fs*0.7, 'right', narrow?.85:.66);
+    text('LIGHT OUT', labX, pProj[1] +fs*0.7, 'right', narrow?.85:.66);
 
     // One block: OBELISKEN / REPROJECTION heads the explanation and travels with it. Landscape sets
     // it under the rig against the same gutter; a portrait viewport has no room beside the rig, so
