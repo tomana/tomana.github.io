@@ -172,9 +172,9 @@
   var LENS_DEPTH=[-0.05,5.62,0.255];   // upper head: the depth camera's lens rim
   var LENS_PROJ =[-0.10,5.02,0.355];   // lower head: the projector's lens rim
   var CAPTION=['A DEPTH CAMERA MAPS THE BODY.',
-               'CAMERA AND PROJECTOR',
-               'INTRINSICS REPROJECT THE MAP',
-               'BACK INTO WORLD SPACE'];
+               'REALTIME PROCESSING WITH CAMERA',
+               'AND PROJECTOR INTRINSICS REPROJECTS',
+               'IT BACK INTO WORLD SPACE'];
   function renderOverlay(t){
     var cv=EL.workcanvas, ctx=A.octx; if(!cv||!ctx) return;
     var W=cv.width,H=cv.height; ctx.clearRect(0,0,W,H);
