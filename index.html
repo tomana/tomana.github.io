@@ -25,13 +25,15 @@
   #obx-worklist{padding:72px 20px 64px;font-family:'Martian Mono',monospace;color:#fff;-webkit-font-smoothing:antialiased;}
   .wk-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,400px),1fr));gap:44px 28px;max-width:1100px;margin:0 auto;}
   .wk{display:block;color:#fff;text-decoration:none;}
-  .wk img{display:block;width:100%;aspect-ratio:16/9;object-fit:cover;background:#111;transition:opacity .25s;}
+  .wk img{display:block;width:100%;height:auto;aspect-ratio:16/9;object-fit:cover;background:#111;transition:opacity .25s;}
   .wk:hover img{opacity:.8;}
   .wk-head{display:flex;gap:14px;align-items:baseline;margin-top:14px;}
   .wk-year{font-size:11px;letter-spacing:.1em;color:rgba(255,255,255,.5);}
   .wk-title{font-size:13px;letter-spacing:.12em;text-transform:uppercase;line-height:1.5;}
   .wk-desc{margin:8px 0 0;font-size:12px;line-height:1.7;letter-spacing:.02em;color:rgba(255,255,255,.66);}
-  @media (min-width:900px){ #obx-worklist{padding:110px 40px 80px 190px;} }
+  #obx-workshade{position:absolute;top:0;left:0;right:0;height:210px;z-index:10;pointer-events:none;opacity:0;
+    background:linear-gradient(#000 0,#000 150px,rgba(0,0,0,0) 210px);}
+  @media (min-width:900px){ #obx-worklist{padding:110px 40px 80px 190px;} #obx-workshade{display:none;} }
 </style>
 </head>
 <body>
@@ -91,6 +93,7 @@
       </div>
     </section>
   </div>
+  <div id="obx-workshade"></div>
 
   <div id="obx-contact" style="position:absolute;inset:0;opacity:0;transition:opacity .4s ease;pointer-events:none;background:#000;overflow:hidden;">
     <video id="obx-video2" preload="auto" loop muted playsinline style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);min-width:100%;min-height:100%;width:auto;height:auto;object-fit:cover;">
@@ -116,7 +119,7 @@
 (function(){
   // ---- element handles ----
   var EL = {};
-  ['wrap','canvas','vig','flare','nav','wm','wmbox','work','video','worklink','workcanvas','worktext','contact','video2','mail','cv',
+  ['wrap','canvas','vig','flare','nav','wm','wmbox','work','video','worklink','workcanvas','worktext','workmore','workshade','contact','video2','mail','cv',
    'home','navwork','navcv','navcontact'].forEach(function(k){ EL[k]=document.getElementById('obx-'+k); });
 
   var FINT=1.15, FSPREAD=1, FSEP=1;                 // flare tuning (sliders removed)
@@ -637,6 +640,7 @@
     });
   }
   function setPage(name){
+    if(name==='work' && S.page!=='work' && EL.work) EL.work.scrollTop=0;   // Work always opens on the obelisk
     S.page=name;
     A._blank=false;   // let the splash canvas settle into (or out of) its idle state
     setNav(name);
@@ -645,6 +649,7 @@
     Object.keys(pages).forEach(function(k){ var el=pages[k]; if(!el) return; var on=(k===name);
       el.style.opacity=on?'1':'0'; el.style.pointerEvents=on?'auto':'none'; });
     if(EL.worklink) EL.worklink.style.pointerEvents=(name==='work')?'auto':'none';
+    workShade();
     if(EL.mail) EL.mail.style.pointerEvents=(name==='contact')?'auto':'none';
     [[EL.video,'work'],[EL.video2,'contact']].forEach(function(pv){ var v=pv[0]; if(!v) return;
       if(name===pv[1]){ v.play().catch(function(){}); } else if(!v.paused){ v.pause(); } });
@@ -673,6 +678,18 @@
   EL.navwork.addEventListener('click', goWork);
   EL.navcv.addEventListener('click', goCV);
   EL.navcontact.addEventListener('click', goContact);
+
+  // ---- Work scrolls: the obelisk is the first screen, the other works follow ----
+  // The arrow scrolls one screen down. On a phone the list passes under the nav, so a black band
+  // fades in behind it as the obelisk leaves (CSS hides the band where the list clears the nav).
+  function workShade(){
+    if(!EL.workshade||!EL.work) return;
+    var H=EL.work.clientHeight, a=(S.page==='work') ? (EL.work.scrollTop-(H-260))/140 : 0;
+    EL.workshade.style.opacity=String(Math.max(0,Math.min(1,a)));
+  }
+  if(EL.work) EL.work.addEventListener('scroll', workShade, {passive:true});
+  if(EL.workmore) EL.workmore.addEventListener('click', function(e){ e.preventDefault();
+    EL.work.scrollTo({top:EL.work.clientHeight, behavior:'smooth'}); });
 
   // ---- routes: "/" is the splash. /work, /cv and /contact are real URLs: GitHub Pages serves
   // work/index.html, cv/index.html and contact/index.html, which bounce to /#page; the router opens
