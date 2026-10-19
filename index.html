@@ -20,6 +20,18 @@
     60%{opacity:1;}
     100%{opacity:1;letter-spacing:.30em;filter:blur(0);transform:translateY(0) scale(1);}
   }
+  /* Work: the obelisk fills the first screen, the other works scroll in below it */
+  @keyframes obx-bob{ 0%,100%{transform:translate(-50%,0);} 50%{transform:translate(-50%,5px);} }
+  #obx-worklist{padding:72px 20px 64px;font-family:'Martian Mono',monospace;color:#fff;-webkit-font-smoothing:antialiased;}
+  .wk-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,400px),1fr));gap:44px 28px;max-width:1100px;margin:0 auto;}
+  .wk{display:block;color:#fff;text-decoration:none;}
+  .wk img{display:block;width:100%;aspect-ratio:16/9;object-fit:cover;background:#111;transition:opacity .25s;}
+  .wk:hover img{opacity:.8;}
+  .wk-head{display:flex;gap:14px;align-items:baseline;margin-top:14px;}
+  .wk-year{font-size:11px;letter-spacing:.1em;color:rgba(255,255,255,.5);}
+  .wk-title{font-size:13px;letter-spacing:.12em;text-transform:uppercase;line-height:1.5;}
+  .wk-desc{margin:8px 0 0;font-size:12px;line-height:1.7;letter-spacing:.02em;color:rgba(255,255,255,.66);}
+  @media (min-width:900px){ #obx-worklist{padding:110px 40px 80px 190px;} }
 </style>
 </head>
 <body>
@@ -43,14 +55,41 @@
     <h1 id="obx-wm" style="margin:0;font-weight:700;font-size:clamp(40px,7vw,98px);line-height:.92;color:#eef0f3;letter-spacing:.30em;text-indent:.30em;font-family:'Archivo',sans-serif;opacity:0;text-shadow:0 0 38px rgba(120,150,200,.18);">OBELISKEN</h1>
   </div>
 
-  <div id="obx-work" style="position:absolute;inset:0;opacity:0;transition:opacity .4s ease;pointer-events:none;background:#000;overflow:hidden;">
-    <video id="obx-video" preload="auto" loop muted playsinline style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);min-width:100%;min-height:100%;width:auto;height:auto;object-fit:cover;">
-      <source src="obelisken.mp4" type="video/mp4">
-    </video>
-    <canvas id="obx-workcanvas" style="position:absolute;inset:0;width:100%;height:100%;display:block;mix-blend-mode:difference;pointer-events:none;"></canvas>
-    <div id="obx-worktext" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:14px;pointer-events:none;font-family:'Martian Mono',monospace;color:#fff;mix-blend-mode:difference;padding-bottom:18vh;">
-      <a id="obx-worklink" href="https://vimeo.com/tomana" target="_blank" rel="noopener" style="font-size:clamp(18px,2.4vw,30px);letter-spacing:.04em;color:#fff;text-decoration:none;border-bottom:1px solid rgba(255,255,255,.4);padding-bottom:2px;">vimeo.com/tomana</a>
+  <div id="obx-work" style="position:absolute;inset:0;opacity:0;transition:opacity .4s ease;pointer-events:none;background:#000;overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:#333 #000;">
+    <div style="position:relative;height:100%;overflow:hidden;">
+      <video id="obx-video" preload="auto" loop muted playsinline style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);min-width:100%;min-height:100%;width:auto;height:auto;object-fit:cover;">
+        <source src="obelisken.mp4" type="video/mp4">
+      </video>
+      <canvas id="obx-workcanvas" style="position:absolute;inset:0;width:100%;height:100%;display:block;mix-blend-mode:difference;pointer-events:none;"></canvas>
+      <div id="obx-worktext" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:14px;pointer-events:none;font-family:'Martian Mono',monospace;color:#fff;mix-blend-mode:difference;padding-bottom:18vh;">
+        <a id="obx-worklink" href="https://vimeo.com/tomana" target="_blank" rel="noopener" style="font-size:clamp(18px,2.4vw,30px);letter-spacing:.04em;color:#fff;text-decoration:none;border-bottom:1px solid rgba(255,255,255,.4);padding-bottom:2px;">vimeo.com/tomana</a>
+      </div>
+      <a id="obx-workmore" href="#obx-worklist" aria-label="More work" style="position:absolute;left:50%;bottom:6px;transform:translate(-50%,0);padding:8px 16px;color:#fff;mix-blend-mode:difference;text-decoration:none;font-family:'Martian Mono',monospace;font-size:16px;line-height:1;animation:obx-bob 2.4s ease-in-out infinite;">&#8595;</a>
     </div>
+    <section id="obx-worklist">
+      <div class="wk-grid">
+        <a class="wk" href="https://vimeo.com/1219772256" target="_blank" rel="noopener">
+          <img src="img/work/stargate.jpg" alt="Stargate" width="960" height="540" loading="lazy">
+          <div class="wk-head"><span class="wk-year">2026</span><span class="wk-title">Stargate</span></div>
+          <p class="wk-desc">Realtime visuals for a projected show. openFrameworks and GLSL.</p>
+        </a>
+        <a class="wk" href="https://vimeo.com/327783057" target="_blank" rel="noopener">
+          <img src="img/work/illd-vigeland.jpg" alt="Illd performing in the dark, a projected screen behind them" width="960" height="540" loading="lazy">
+          <div class="wk-head"><span class="wk-year">2019</span><span class="wk-title">Illd, live at Emanuel Vigeland Museum</span></div>
+          <p class="wk-desc">Realtime visualization, with Øyvind Mellbye (analog electronics) and Bjørnar Steinnes Luteberget (realtime audio synthesis).</p>
+        </a>
+        <a class="wk" href="https://vimeo.com/100060997" target="_blank" rel="noopener">
+          <img src="img/work/volumetric-skull.jpg" alt="A slice of a skull projected onto a moving surface" width="960" height="540" loading="lazy">
+          <div class="wk-head"><span class="wk-year">2014</span><span class="wk-title">Volumetric data navigated by moving surface</span></div>
+          <p class="wk-desc">A depth camera and a projector turn a moving surface into a window into a skull dataset. With Bjørnar Steinnes Luteberget.</p>
+        </a>
+        <a class="wk" href="https://vimeo.com/148372991" target="_blank" rel="noopener">
+          <img src="img/work/overlapping-meshes.jpg" alt="A fish-shaped mesh overlapping a triangular grid" width="960" height="512" loading="lazy">
+          <div class="wk-head"><span class="wk-year">2014</span><span class="wk-title">Overlapping meshes</span></div>
+          <p class="wk-desc">Finite element computations on overlapping meshes, with a fish shape traced from video. C++, openFrameworks, FEniCS.</p>
+        </a>
+      </div>
+    </section>
   </div>
 
   <div id="obx-contact" style="position:absolute;inset:0;opacity:0;transition:opacity .4s ease;pointer-events:none;background:#000;overflow:hidden;">
