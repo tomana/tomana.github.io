@@ -8,7 +8,7 @@
 <meta name="theme-color" content="#000000">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23000'/%3E%3Cpolygon points='16,6 21,26 11,26' fill='%23eef0f3'/%3E%3C/svg%3E">
 <!-- obelisken.no: the splash of tomnaerland.com ("/", in ../index.html) on its own, without the Work, CV and
-     Contact layers or their videos; a quiet "tomnaerland.com →" top right is the only link, and
+     Contact layers or their videos; a quiet "tomnaerland.com →" under OBELISKEN is the only link, and
      it opens Work: whoever follows it has just seen the splash here. obelisken.no forwards here (tomnaerland.com/obelisken/). A COPY of the splash
      code, not shared: a change to the splash there has to be made here too. Fonts: one weight each, Latin
      subset, WOFF2, preloaded. -->
@@ -22,8 +22,12 @@
   a,h1,div,span,p{-webkit-user-select:text;user-select:text;}
   a{-webkit-user-drag:none;}
   h1{pointer-events:auto;}
-  #obx-nav a{opacity:.55;transition:opacity .25s;}
-  #obx-nav a:hover,#obx-nav a:focus-visible{opacity:1;}
+  /* the one link, under OBELISKEN: it fades in after the wordmark has come in, not during the flip */
+  #obx-site{position:absolute;top:100%;left:50%;transform:translateX(-50%);margin-top:clamp(10px,1.6vw,22px);padding:10px 4px;
+    white-space:nowrap;font-family:'Martian Mono',monospace;font-size:12px;line-height:1;letter-spacing:.08em;color:#eef0f3;
+    text-decoration:none;pointer-events:none;opacity:0;transition:opacity 1.2s ease .9s;-webkit-font-smoothing:antialiased;}
+  #obx-site.on{opacity:.55;pointer-events:auto;}
+  #obx-site.on:hover,#obx-site.on:focus-visible{opacity:1;transition-delay:0s;transition-duration:.25s;}
   @keyframes obx-wm{
     0%{opacity:0;letter-spacing:.66em;filter:blur(10px);transform:translateY(10px) scale(.84);}
     60%{opacity:1;}
@@ -43,18 +47,16 @@
 
   <div id="obx-wmbox" style="position:absolute;left:0;right:0;top:82%;display:flex;justify-content:center;pointer-events:none;transform:translateY(-50%);">
     <h1 id="obx-wm" style="margin:0;font-weight:700;font-size:clamp(40px,7vw,98px);line-height:.92;color:#eef0f3;letter-spacing:.30em;text-indent:.30em;font-family:'Archivo',sans-serif;opacity:0;text-shadow:0 0 38px rgba(120,150,200,.18);">OBELISKEN</h1>
+    <a id="obx-site" href="https://tomnaerland.com/work">tomnaerland.com &rarr;</a>
   </div>
 
 </div>
-<nav id="obx-nav" style="position:fixed;top:14px;right:20px;z-index:30;font-family:'Martian Mono',monospace;color:#fff;mix-blend-mode:difference;opacity:1;-webkit-font-smoothing:antialiased;">
-  <a href="https://tomnaerland.com/work" style="display:inline-block;padding:10px 0;font-size:12px;line-height:1;letter-spacing:.08em;color:currentColor;text-decoration:none;">tomnaerland.com &rarr;</a>
-</nav>
 <script>
 "use strict";
 (function(){
   // ---- element handles ----
   var EL = {};
-  ['wrap','canvas','vig','flare','nav','wm','wmbox'].forEach(function(k){ EL[k]=document.getElementById('obx-'+k); });
+  ['wrap','canvas','vig','flare','nav','wm','wmbox','site'].forEach(function(k){ EL[k]=document.getElementById('obx-'+k); });
 
   var FINT=1.15, FSPREAD=1, FSEP=1;                 // flare tuning (sliders removed)
   var REVEAL_DUR=3400;
@@ -276,6 +278,19 @@
     var W=cv.width,H=cv.height; ctx.clearRect(0,0,W,H);
     var cam=camParams(t),thr=revealThreshold(t);
     var V=makeView(cam,W,H), rot=V.rot, rl=V.rl, proj=V.proj;
+    // Room for the link under the wordmark: where the screen is too short for it (a 16:10 laptop, a phone
+    // on its side) the whole scene rises by the shortfall, instead of the link dropping off the bottom.
+    // The wordmark's size is worked out as below (its block further down sets it).
+    if(EL.site){
+      var b0=proj(rot([0,0,0])), t0=proj(rot([0,7.05,0]));
+      var fp=Math.abs(b0[1]-t0[1])/DPR*0.165;
+      ctx.font="700 "+fp+"px 'Archivo', sans-serif";
+      var ww=ctx.measureText('OBELISKEN').width + 0.30*fp*9, mw=(EL.wrap?EL.wrap.clientWidth:window.innerWidth)*0.8;
+      if(ww>mw) fp*=mw/ww;
+      var gap=Math.max(10,Math.min(22,(W/DPR)*0.016));             // #obx-site's margin-top
+      var low=b0[1]/DPR + fp*0.12 + fp*0.46 + gap + 32 + 10 - H/DPR;  // the link's bottom past the screen's, 10 px clear
+      if(low>0){ cam.oy=H*0.47-low*DPR; V=makeView(cam,W,H); rot=V.rot; rl=V.rl; proj=V.proj; }
+    }
     var lw=[-0.35,0.92,0.42]; var ll=Math.hypot(lw[0],lw[1],lw[2]); lw=[lw[0]/ll,lw[1]/ll,lw[2]/ll]; var L=rl(lw);
     function clip(verts){var T=thr.y,out=[];
       for(var i=0;i<verts.length;i++){var a=verts[i],b=verts[(i+1)%verts.length];
@@ -402,6 +417,7 @@
         EL.wm.style.opacity='';
         void EL.wm.offsetWidth;
         EL.wm.style.animation='obx-wm 1.5s cubic-bezier(.16,.84,.3,1) both';
+        if(EL.site) EL.site.classList.add('on');
       }
       if(EL.nav){ EL.nav.style.color='#fff'; EL.nav.style.mixBlendMode='difference'; }
 
