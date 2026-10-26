@@ -61,7 +61,7 @@
      cards are stacks of versions. Cards arrive, a tap keeps or drops them, a keep grows a new version on its
      stack. It slides up into place as the screen comes up (--pkp, 0..1, set on scroll); a phone scales it
      down (--pks). */
-  .pk{position:absolute;z-index:1;top:180px;left:50%;width:300px;--pks:.55;transform-origin:50% 0;
+  .pk{position:absolute;z-index:1;top:84px;left:50%;width:300px;--pks:1;transform-origin:50% 0;
     transform:translate(-50%,calc((1 - var(--pkp,1)) * 70px)) scale(calc(var(--pks) * (.92 + .08 * var(--pkp,1))));
     opacity:var(--pkp,1);pointer-events:none;font-family:'Martian Mono',monospace;color:#fff;}
   .pk-win{background:rgba(22,22,22,.88);border:1px solid rgba(255,255,255,.22);border-radius:6px;padding:8px;box-shadow:0 18px 50px rgba(0,0,0,.55);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);}
@@ -78,20 +78,27 @@
   .pk-auto{display:flex;gap:8px;align-items:center;margin:7px 0;padding:5px 7px;font-size:9px;letter-spacing:.14em;border:1px solid rgba(255,255,255,.14);border-radius:3px;color:rgba(255,255,255,.75);}
   .pk-auto i{font-style:normal;color:#9be38f;}
   .pk-auto .pk-q{margin-left:auto;letter-spacing:.06em;color:rgba(255,255,255,.45);}
-  .pk-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px;}
-  .pk-slot{position:relative;padding:0 6px 6px 0;}   /* room for a stack's fan, as the picker reserves it */
-  .pk-fan{position:absolute;border:1px solid #777;border-radius:2px;background:#1e1e1e;transition:opacity .3s;}
-  .pk-fan.f1{left:3px;top:3px;right:3px;bottom:3px;} .pk-fan.f2{left:6px;top:6px;right:0;bottom:0;}
-  .pk-card{position:relative;z-index:1;border:1px solid #3a3a3a;border-radius:2px;background:#1e1e1e;transition:transform .28s cubic-bezier(.3,1.6,.5,1),opacity .25s,box-shadow .25s;}
+  .pk-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;}
+  /* Stacks as the picker draws them (static/app/style.css .cardwrap/.fan): the slot reserves room at the bottom-right
+     and each older version is an outline 3 px further down and right; ‹ › sit on the picture's bottom corners, ‹ lit
+     when there are older versions, › dim on the newest. A vote is "+1" in the + cell, not a frame round the card. */
+  .pk-slot{position:relative;padding:0 9px 9px 0;}
+  .pk-fan{position:absolute;border:1px solid #777;border-radius:3px;background:#242424;opacity:0;transition:opacity .3s;}
+  .pk-fan.f1{left:3px;top:3px;right:6px;bottom:6px;} .pk-fan.f2{left:6px;top:6px;right:3px;bottom:3px;} .pk-fan.f3{left:9px;top:9px;right:0;bottom:0;}
+  .pk-arr{position:absolute;bottom:18px;width:22%;aspect-ratio:1;display:none;align-items:center;justify-content:center;background:rgba(40,40,40,.32);color:rgba(255,255,255,.9);font-size:10px;line-height:1;}
+  .pk-arr.l{left:1px;} .pk-arr.r{right:1px;color:rgba(255,255,255,.25);}
+  .pk-card.stk .pk-arr{display:flex;}
+  .pk-card{position:relative;z-index:1;border:1px solid #3a3a3a;border-radius:3px;background:#262626;overflow:hidden;transition:transform .28s cubic-bezier(.3,1.6,.5,1),opacity .25s,box-shadow .25s;}
   .pk-card .pk-th{display:block;aspect-ratio:1;border-radius:2px 2px 0 0;}
-  .pk-card .pk-bar{display:flex;align-items:center;height:15px;font-size:8px;color:rgba(255,255,255,.75);}
-  .pk-card .pk-bar span{flex:1;min-width:0;padding-left:4px;overflow:hidden;white-space:nowrap;text-overflow:clip;}
-  .pk-card .pk-bar b{font-weight:400;color:#9be38f;padding-right:3px;}
-  .pk-card .pk-bar em{flex:0 0 15px;width:15px;height:15px;line-height:15px;text-align:center;font-style:normal;border-left:1px solid #3a3a3a;transition:background .15s;}
+  .pk-card .pk-bar{display:flex;align-items:center;height:17px;font-size:9px;color:rgba(255,255,255,.75);}
+  .pk-card .pk-bar span{flex:1;min-width:0;padding-left:4px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;}
+  .pk-card .pk-bar i.cp{flex:0 0 auto;position:relative;width:5px;height:5px;margin:0 4px 0 2px;border:1px solid rgba(255,255,255,.55);border-radius:1px;}
+  .pk-card .pk-bar i.cp::before{content:'';position:absolute;left:-3px;top:-3px;width:5px;height:5px;border-left:1px solid rgba(255,255,255,.55);border-top:1px solid rgba(255,255,255,.55);}
+  .pk-card .pk-bar em.v{color:#d6efd0;background:rgba(120,220,110,.10);box-shadow:inset 0 0 0 1px rgba(120,220,110,.32);}
+  .pk-card .pk-bar em{flex:0 0 17px;width:17px;font-size:10px;height:17px;line-height:17px;text-align:center;font-style:normal;border-left:1px solid #3a3a3a;transition:background .15s;}
   .pk-card.out{opacity:0;transform:scale(.7) rotate(-8deg);}
   .pk-card.new{opacity:0;transform:translateY(-14px) scale(.8);}
   .pk-card.ver{transform:translate(-3px,-3px);}
-  .pk-card.kept{box-shadow:0 0 0 2px rgba(255,255,255,.85);}
   .pk-card .pk-bar em.hit-m{background:rgba(255,255,255,.3);} .pk-card .pk-bar em.hit-p{background:rgba(120,220,110,.6);}
   .pk-foot{display:flex;justify-content:space-between;margin-top:7px;font-size:8px;letter-spacing:.08em;color:rgba(255,255,255,.45);}
   .pk-cur{position:absolute;z-index:2;left:150px;top:200px;width:14px;height:14px;margin:-7px 0 0 -7px;border-radius:50%;background:rgba(255,255,255,.9);box-shadow:0 0 0 4px rgba(255,255,255,.25);transition:left .32s ease,top .32s ease,transform .12s;}
@@ -102,7 +109,17 @@
   .pk-lab.l2{left:calc(100% + 16px);} .pk-lab.l2::after{right:calc(100% + 3px);}
   .pk-lab.l3{top:12px;} .pk-lab.l1{top:150px;} .pk-lab.l2{top:250px;}
   .pk-lab.ping{color:#fff;}
-  @media (min-width:900px){ .pk{top:84px;--pks:.92;} }
+  /* A phone: the mock nearly as wide as the screen, below the nav, the few words after it (operator, 10-26: "Make the
+     picker bigger, and remove most if the text"); the side labels have no room there. The holder takes the scaled
+     mock's height (--pkh x --pks, set by the script), so the screen grows to fit it. */
+  @media (max-width:899px){
+    .wk[data-work="picker"]{display:flex;flex-direction:column;padding-bottom:6vh;padding-bottom:6svh;}
+    .pk-hold{position:relative;height:calc(var(--pkh,400px) * var(--pks,1));margin:122px 0 18px;}
+    .pk-hold .pk{top:0;}
+    .wk[data-work="picker"] .wk-body{position:relative;left:auto;right:auto;bottom:auto;margin-top:auto;}
+    .wk[data-work="picker"] .wk-verdict{min-height:3.2em;}
+    .pk-lab{display:none;}
+  }
 </style>
 </head>
 <body>
@@ -162,7 +179,7 @@
 <section id="obx-worklist">
   <article class="wk" data-work="picker">
     <div class="wk-tag"><span>02</span><span>The picker</span><span>2026</span></div>
-    <div class="pk" aria-hidden="true">
+    <div class="pk-hold"><div class="pk" aria-hidden="true">
       <div class="pk-win">
         <div class="pk-use"><div class="pk-ubox"></div><div class="pk-ubox"></div><div class="pk-ubox"></div><div class="pk-gear">&#9881;</div></div>
         <div class="pk-top"><span class="on">visuals_picked</span><span>music_hybrid</span><span class="pk-dots">&middot;&middot;&middot;</span></div>
@@ -174,11 +191,10 @@
       <span class="pk-lab l3">THEIR TIME</span>
       <span class="pk-lab l1">AGENTS MAKE</span>
       <span class="pk-lab l2">YOU PICK</span>
-    </div>
+    </div></div>
     <div class="wk-body">
       <p class="wk-verdict" aria-hidden="true"></p>
       <h2 class="wk-name">The picker</h2>
-      <p class="wk-desc">Agents make, a person picks. A chat runs at the speed of typing; the picker runs at the speed of judging: a tap a card, and the picks steer the next round.</p>
       <a class="wk-link" href="playground/picker-run-through.html">the run-through &rarr;</a>
       <p class="wk-credit">In the clip: Miranda Priestly's run-through, The Devil Wears Prada (2006).</p>
     </div>
@@ -875,13 +891,13 @@
 </script>
 <script>
 "use strict";
-/* The picker screen's live mock (.pk): twelve made-up cards, judged by a made-up taste (warm, hard-edged).
+/* The picker screen's live mock (.pk): nine made-up cards, judged by a made-up taste (warm, hard-edged).
    A tap drops a card or keeps it. A dropped card's place gets a new one, mostly grown from a keep; a kept card
    gets a new version on its stack (a revise), so the grid drifts toward the taste, the picker's point. Every
    card the agents make costs a little of their session, in the usage boxes. Runs only while its screen shows. */
 (function(){
   var root=document.querySelector('.pk'); if(!root) return;
-  var sec=root.parentNode, grid=root.querySelector('.pk-grid'), cur=root.querySelector('.pk-cur'),
+  var sec=root.closest(".wk"), grid=root.querySelector('.pk-grid'), cur=root.querySelector('.pk-cur'),
       cnt=root.querySelector('.pk-n'), queue=root.querySelector('.pk-q'),
       labMake=root.querySelector('.l1'), labPick=root.querySelector('.l2'), labTime=root.querySelector('.l3'),
       uboxes=[].slice.call(root.querySelectorAll('.pk-ubox'));
@@ -918,26 +934,31 @@
   paintUsage();
 
   // ---- the grid: each card in a slot with room for its stack's fan ----
+  // a card shows its newest version; each older one is an outline of its stack (three at most), and a stack gets ‹ ›
   function show(slot,g){ var card=slot.card; card.g=g;
     card.querySelector('.pk-th').style.background=paint(g);
     card.querySelector('span').textContent='v'+g.id+(g.v>1?'.'+g.v:'');
-    slot.fans[0].style.opacity=g.v>1?1:0; slot.fans[1].style.opacity=g.v>2?1:0; }
+    slot.fans.forEach(function(f,k){ f.style.opacity=g.v>k+1?1:0; });
+    card.classList.toggle('stk', g.v>1); }
   var slots=[];
-  for(var i=0;i<12;i++){
+  for(var i=0;i<9;i++){
     var slot=document.createElement('div'); slot.className='pk-slot';
-    slot.innerHTML='<div class="pk-fan f2"></div><div class="pk-fan f1"></div><div class="pk-card"><i class="pk-th"></i><div class="pk-bar"><span></span><b></b><em>&minus;</em><em>+</em></div></div>';
-    slot.card=slot.querySelector('.pk-card'); slot.fans=[slot.querySelector('.f1'),slot.querySelector('.f2')];
+    slot.innerHTML='<div class="pk-fan f3"></div><div class="pk-fan f2"></div><div class="pk-fan f1"></div>'+
+      '<div class="pk-card"><i class="pk-th"></i><b class="pk-arr l">&lsaquo;</b><b class="pk-arr r">&rsaquo;</b>'+
+      '<div class="pk-bar"><span></span><i class="cp"></i><em>&minus;</em><em>+</em></div></div>';
+    slot.card=slot.querySelector('.pk-card'); slot.fans=[slot.querySelector('.f1'),slot.querySelector('.f2'),slot.querySelector('.f3')];
     var g=gene(); if(rnd()<.4) g.v=2+(rnd()*2|0);   // some start as stacks
     show(slot,g); grid.appendChild(slot); slots.push(slot);
   }
   function ping(lab){ lab.classList.add('ping'); setTimeout(function(){ lab.classList.remove('ping'); },500); }
+  function vote(card,on){ var em=card.querySelectorAll('em')[1]; em.classList.toggle('v',on); em.textContent=on?'+1':'+'; }
   function arrive(slot,g){   // agents make: a new card pops in where one left
-    var card=slot.card; card.classList.remove('out','kept'); card.classList.add('new'); show(slot,g);
+    var card=slot.card; card.classList.remove('out','kept'); vote(card,false); card.classList.add('new'); show(slot,g);
     void card.offsetWidth; card.classList.remove('new');
     ping(labMake); queue.textContent='queue · '+(1+(rnd()*3|0)); spend(); ping(labTime);
   }
   function revise(slot){     // a keep grows a new version on its own stack
-    var card=slot.card; card.classList.remove('kept'); card.querySelector('b').textContent='';
+    var card=slot.card; card.classList.remove('kept'); vote(card,false);
     card.classList.add('ver'); show(slot, child(card.g,true)); spend(); ping(labTime);
     setTimeout(function(){ card.classList.remove('ver'); }, 260);
   }
@@ -956,7 +977,7 @@
       setTimeout(function(){
         cur.classList.remove('tap'); em.classList.remove('hit-p','hit-m'); busy=false;
         if(keep){
-          card.classList.add('kept'); card.querySelector('b').textContent='+1';
+          card.classList.add('kept'); vote(card,true);
           keeps.push(card.g); if(keeps.length>4) keeps.shift();
           setTimeout(function(){ revise(slot); }, 1600);
         } else {
@@ -966,6 +987,20 @@
       }, 160);
     }, 360);
   }
+  // its size: a phone, nearly the screen's width; wider screens, as big as fits above the words (max 1.3x)
+  // (measured again once the fonts are in: before, the mock is shorter and the words under it rode up into it)
+  var lastW=0, lastH=0;
+  function fit(){
+    var W=window.innerWidth, H=window.innerHeight, wide=W>=900, h=root.offsetHeight||400;
+    if(W===lastW && h===lastH && (!wide || Math.abs(H-fit.H)<1)) return;   // a phone's address bar changes only H
+    lastW=W; lastH=h; fit.H=H;
+    var s = wide ? Math.min(1.3, Math.max(.8, (H-84-300)/h)) : (W-28)/300;
+    root.style.setProperty('--pks', s.toFixed(3));
+    sec.style.setProperty('--pks', s.toFixed(3)); sec.style.setProperty('--pkh', h+'px');   // the holder reads both
+  }
+  fit(); window.addEventListener('resize', fit); window.addEventListener('load', fit);
+  if(document.fonts && document.fonts.ready) document.fonts.ready.then(fit);
+  if(window.ResizeObserver) new ResizeObserver(fit).observe(root);
   // it slides up into place as its screen comes up
   function scrollIn(){
     var r=sec.getBoundingClientRect(), H=window.innerHeight;
