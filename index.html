@@ -138,12 +138,13 @@
   </div>
 
   <div id="obx-work" style="position:absolute;inset:0;opacity:0;transition:opacity .4s ease;pointer-events:none;background:#000;overflow:hidden;">
-    <!-- one background per work, crossfaded by scroll; the picker's clip is local to the beta server -->
+    <!-- one background per work, crossfaded by scroll; the picker's clip is local to the beta server. ?v= changes
+         with each new cut, so a phone that cached the last one fetches it again. -->
     <video id="obx-video" class="obx-bgv on" data-work="obelisken" preload="auto" loop muted playsinline>
-      <source src="obelisken.mp4" type="video/mp4">
+      <source src="obelisken.mp4?v=4" type="video/mp4">
     </video>
     <video class="obx-bgv" data-work="picker" preload="metadata" loop muted playsinline poster="img/work/picker.jpg">
-      <source src="local/picker-runthrough.mp4" type="video/mp4">
+      <source src="local/picker-runthrough.mp4?v=3" type="video/mp4">
     </video>
     <video class="obx-bgv" data-work="illd" data-start="7.5" preload="metadata" loop muted playsinline poster="img/work/illd-vigeland.jpg">
       <source src="illd.mp4" type="video/mp4">
