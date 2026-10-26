@@ -41,9 +41,12 @@
   /* The first screen is the obelisk video alone; the rig drawing comes up with the Obelisken screen in the list
      (operator, 10-26: "Have the ovelisken graphic on a card in the scrollable work section, just keep the video on the
      main work page"). The arrow belongs to the first screen. */
-  #obx-work #obx-workcanvas,#obx-work #obx-workmore{transition:opacity .6s ease;}
-  #obx-work #obx-workcanvas{opacity:0;}
-  #obx-work.rig #obx-workcanvas{opacity:1;}
+  #obx-work #obx-workmore{transition:opacity .6s ease;}
+  /* The tower and its dark bloom move with the Obelisken screen (operator, 10-26: "make the obelisken scroll with the
+     page, but the dark bloom and the negative is great"): they stay fixed, in the wrap, so the difference blend still
+     reads the video under them (inside the scrolling list it would see only the list), and the script shifts them by
+     the screen's offset as the page scrolls (rigScroll). */
+  #obx-workcanvas,#obx-workbloom{will-change:transform;}
   #obx-work.away #obx-workmore{opacity:0;pointer-events:none;}
   #obx-worklist{display:none;position:relative;z-index:1;margin-top:calc(100vh - var(--peek,56px));margin-top:calc(100svh - var(--peek,56px));font-family:'Martian Mono',monospace;color:#fff;-webkit-font-smoothing:antialiased;}
   html.obx-scroll #obx-worklist{display:block;}
@@ -55,7 +58,11 @@
   .obx-bgv[data-work="illd"]{filter:brightness(1.35) contrast(1.08);}   /* a dark room: lift it a little */
   .wk-name{margin:0 0 18px;font-family:'Archivo',sans-serif;font-weight:700;font-size:clamp(30px,6.4vw,66px);line-height:.95;letter-spacing:.2em;text-transform:uppercase;color:#eef0f3;}
   .wk-desc{margin:0;max-width:600px;font-size:13px;line-height:1.75;letter-spacing:.02em;color:rgba(255,255,255,.88);}
-  .wk-link{display:inline-block;margin-top:20px;font-size:13px;letter-spacing:.04em;color:#fff;text-decoration:none;border-bottom:1px solid rgba(255,255,255,.5);padding-bottom:2px;}
+  /* the title is the link, straight out to the work's own place (operator, 10-26: "the work sections only go to
+     external sites for now, no internal pages, i want a very very slim and graphical thing"); a small arrow up-right */
+  a.wk-name{display:inline-block;text-decoration:none;}
+  .wk-ext{display:inline-block;margin-left:.28em;font-size:.42em;letter-spacing:0;vertical-align:.95em;transform:rotate(-45deg);opacity:.75;transition:opacity .2s;}
+  a.wk-name:hover .wk-ext{opacity:1;}
   
   @media (min-width:900px){ .wk{padding:0 40px 0 190px;} .wk-body{left:190px;bottom:13vh;bottom:13svh;} }
   /* The picker screen's drawing, as the obelisk screen has its rig: a small live picker, made up (no real
@@ -150,6 +157,7 @@
     <video class="obx-bgv" data-work="illd" data-start="7.5" preload="metadata" loop muted playsinline poster="img/work/illd-vigeland.jpg">
       <source src="illd.mp4" type="video/mp4">
     </video>
+    <div id="obx-workbloom" style="position:fixed;top:0;left:0;width:100%;height:100vh;height:100svh;pointer-events:none;background:radial-gradient(ellipse 34vh 44vh at 50% 42%,rgba(0,0,0,.88) 0%,rgba(0,0,0,.62) 42%,rgba(0,0,0,0) 100%);background:radial-gradient(ellipse 34svh 44svh at 50% 42%,rgba(0,0,0,.88) 0%,rgba(0,0,0,.62) 42%,rgba(0,0,0,0) 100%);"></div>
     <canvas id="obx-workcanvas" style="position:absolute;inset:0;width:100%;height:100%;display:block;mix-blend-mode:difference;pointer-events:none;"></canvas>
     <a id="obx-workmore" href="#obx-worklist" aria-label="More work" style="position:absolute;left:50%;bottom:calc(var(--peek,64px) + 4px);transform:translate(-50%,0);padding:8px 16px;color:#fff;mix-blend-mode:difference;text-decoration:none;font-family:'Martian Mono',monospace;font-size:16px;line-height:1;animation:obx-bob 2.4s ease-in-out infinite;">&#8595;</a>
   </div>
@@ -180,8 +188,7 @@
   <article class="wk" data-work="obelisken">
     <div class="wk-tag"><span>01</span><span>Obelisken</span><span>2026</span></div>
     <div class="wk-body">
-      <h2 class="wk-name">Obelisken</h2>
-      <a class="wk-link" href="/work/obelisken/">obelisken &rarr;</a>
+      <a class="wk-name" href="https://vimeo.com/1210239025" target="_blank" rel="noopener">Obelisken<span class="wk-ext" aria-hidden="true">&rarr;</span></a>
     </div>
   </article>
   <article class="wk" data-work="picker">
@@ -199,15 +206,13 @@
       <span class="pk-lab l2">YOU PICK</span>
     </div></div>
     <div class="wk-body">
-      <h2 class="wk-name">Picker</h2>
-      <a class="wk-link" href="https://github.com/tomana/picker" target="_blank" rel="noopener">github.com/tomana/picker &rarr;</a>
+      <a class="wk-name" href="https://github.com/tomana/picker" target="_blank" rel="noopener">Picker<span class="wk-ext" aria-hidden="true">&rarr;</span></a>
     </div>
   </article>
   <article class="wk" data-work="illd">
     <div class="wk-tag"><span>03</span><span>Illd</span><span>2019</span></div>
     <div class="wk-body">
-      <h2 class="wk-name">Illd</h2>
-      <a class="wk-link" href="https://vimeo.com/327783057" target="_blank" rel="noopener">vimeo.com/327783057 &rarr;</a>
+      <a class="wk-name" href="https://vimeo.com/327783057" target="_blank" rel="noopener">Illd<span class="wk-ext" aria-hidden="true">&rarr;</span></a>
     </div>
   </article>
 </section>
@@ -456,15 +461,15 @@
   // here depends on time, so the canvas is painted on demand rather than every frame.
   var OV = { dist:31.7, gutter:20, drop:30, halfW:0.065, halfH:0.1672,
              ambient:0.36, key:0.42, rim:0.25, edge:0.38, converge:0.25 };
-  var LENS_DEPTH=[-0.05,5.62,0.255];   // upper head: the depth camera's lens rim
-  var LENS_PROJ =[-0.10,5.02,0.355];   // lower head: the projector's lens rim
   function renderOverlay(){
     var cv=EL.workcanvas, ctx=A.octx; if(!cv||!ctx) return;
     var W=cv.width,H=cv.height; ctx.clearRect(0,0,W,H);
-    var M=OV.gutter*DPR, halfW=H*OV.halfW, halfH=H*OV.halfH;
-    var rigX=W-M-halfW, rigY=M+halfH+OV.drop*DPR;   // drop: px below the top gutter
+    // The tower alone, in the middle of the Obelisken screen, half the screen tall, over a dark bloom
+    // (#obx-workbloom); no cones, no words (operator, 10-26: "Put the obelisken graphic in the center, with a dark
+    // bloom behind it, no words").
+    var rigX=W*0.5, rigY=H*0.42;
     var cam={yaw:-0.50, pitch:0.085, yCenter:3.95,
-             camDist:OV.dist, fovy:0.55, ox:rigX, oy:rigY};
+             camDist:OV.dist*0.67, fovy:0.55, ox:rigX, oy:rigY};
     var V=makeView(cam,W,H);
     var lw=[-0.35,0.92,0.42]; var ll=Math.hypot(lw[0],lw[1],lw[2]); var L=V.rl([lw[0]/ll,lw[1]/ll,lw[2]/ll]);
     var faces=A.faces, draw=[];
@@ -487,69 +492,6 @@
       var g=Math.round(dd.v*255); ctx.fillStyle='rgb('+g+','+g+','+g+')'; ctx.fill();
       ctx.lineWidth=Math.max(0.6,DPR*0.6); ctx.strokeStyle='rgba(255,255,255,'+OV.edge+')'; ctx.stroke();
     }
-
-    // ---- what the rig is doing: sensing cone out to the body, projection cone back onto it ----
-    var fs=Math.max(9*DPR, Math.min(13*DPR, H*0.0135));
-    var pDepth=V.proj(V.rot(LENS_DEPTH)), pProj=V.proj(V.rot(LENS_PROJ)), base=V.proj(V.rot([0,0,0]));
-    // The cones spring from a point nudged slightly toward the other head, so the two apexes sit
-    // closer together than the lenses themselves. The LABELS stay on the true lens heights, which
-    // keeps them from crowding each other as the origins converge.
-    function towardMid(a,b,t){ return [a[0]+((a[0]+b[0])/2-a[0])*t, a[1]+((a[1]+b[1])/2-a[1])*t, a[2]+((a[2]+b[2])/2-a[2])*t]; }
-    var oDepth=V.proj(V.rot(towardMid(LENS_DEPTH,LENS_PROJ,OV.converge)));
-    var oProj =V.proj(V.rot(towardMid(LENS_PROJ,LENS_DEPTH,OV.converge)));
-
-    function beam(p,tx,ty,sp){
-      var dx=tx-p[0], dy=ty-p[1], l=Math.hypot(dx,dy)||1, nx=-dy/l, ny=dx/l;
-      return { a:[tx+nx*sp,ty+ny*sp], b:[tx-nx*sp,ty-ny*sp],
-               at:function(f,o){ return [p[0]+dx*f+nx*o, p[1]+dy*f+ny*o]; } };
-    }
-    function text(str,x,y,align,alpha,size,track){
-      var sz=size||fs;
-      ctx.save();
-      ctx.font='400 '+sz.toFixed(1)+"px 'Martian Mono', monospace";
-      try{ ctx.letterSpacing=(sz*(track||0.12)).toFixed(2)+'px'; }catch(e){}
-      ctx.textAlign=align; ctx.textBaseline='middle';
-      ctx.fillStyle='rgba(255,255,255,'+alpha+')'; ctx.fillText(str,x,y); ctx.restore();
-    }
-
-    // the rig holds its corner, but the cones reach across to the middle of the frame, where the body is
-    var BD=beam(oDepth, W*0.455, H*0.505, H*0.115);   // depth camera measuring the surface
-    var BP=beam(oProj,  W*0.47,  H*0.57,  H*0.130);   // projector putting the image back on it
-
-    var mid=[(BP.a[0]+BP.b[0])/2,(BP.a[1]+BP.b[1])/2];
-    var grad=ctx.createLinearGradient(oProj[0],oProj[1],mid[0],mid[1]);
-    grad.addColorStop(0,'rgba(255,255,255,.15)'); grad.addColorStop(1,'rgba(255,255,255,0)');
-    ctx.fillStyle=grad; ctx.beginPath();
-    ctx.moveTo(oProj[0],oProj[1]); ctx.lineTo(BP.a[0],BP.a[1]); ctx.lineTo(BP.b[0],BP.b[1]);
-    ctx.closePath(); ctx.fill();
-
-    // The dashed cone fades out along its length instead of stopping dead mid-frame, and each leg
-    // is stroked from the APEX outward. Drawing it as one a->apex->b path started the dash pattern
-    // at the far end, the end that sweeps furthest, which is what made the dashes crawl.
-    var dmid=[(BD.a[0]+BD.b[0])/2,(BD.a[1]+BD.b[1])/2];
-    var dg=ctx.createLinearGradient(oDepth[0],oDepth[1],dmid[0],dmid[1]);
-    dg.addColorStop(0,   'rgba(255,255,255,.40)');
-    dg.addColorStop(0.45,'rgba(255,255,255,.28)');
-    dg.addColorStop(1,   'rgba(255,255,255,0)');
-    ctx.save(); ctx.setLineDash([6*DPR,5*DPR]); ctx.lineWidth=Math.max(1,DPR);
-    ctx.strokeStyle=dg; ctx.beginPath();
-    ctx.moveTo(oDepth[0],oDepth[1]); ctx.lineTo(BD.a[0],BD.a[1]);
-    ctx.moveTo(oDepth[0],oDepth[1]); ctx.lineTo(BD.b[0],BD.b[1]);
-    ctx.stroke(); ctx.restore();
-
-    // A portrait viewport crops the video tight, so there is no dark margin to set text against:
-    // push the labels clear of the rig and move the caption to the bottom, brighter and centred.
-    // A portrait viewport crops the video tight and leaves no dark margin beside the rig, so the
-    // labels swing to the far side of their beams and the caption drops into the dark band under
-    // the link, where white type reads brightly instead of fighting the body.
-    var narrow=(W/H)<0.9;
-    // Both labels sit at the top-left of the rig, right-aligned just outside its widest point, each
-    // held at the height of the lens it names (the tower tapers, so up there the gap is wider than
-    // it looks). They part a little vertically because the two lenses are only a head apart.
-    var labX=rigX-halfW-8*DPR;
-    text('DEPTH IN',  labX, pDepth[1]-fs*0.7, 'right', narrow?.85:.66);
-    text('LIGHT OUT', labX, pProj[1] +fs*0.7, 'right', narrow?.85:.66);
-
   }
 
   // ---- the splash: the obelisk (and the IVAR / CHEOPS / KALLAX flip before it) on the main canvas ----
@@ -736,7 +678,7 @@
     if(EL.mail) EL.mail.style.pointerEvents=(name==='contact')?'auto':'none';
     [[EL.video2,'contact'],[EL.video3,'cv']].forEach(function(pv){ var v=pv[0]; if(!v) return;
       if(name===pv[1]){ v.play().catch(function(){}); } else if(!v.paused){ v.pause(); } });
-    S.bg=undefined; workScroll();   // force: pick (or rest) the work backgrounds for this page
+    S.bg=undefined; workScroll(); rigScroll();   // force: pick (or rest) the work backgrounds for this page
     if(name==='contact' && !S.mailSet && EL.mail){
       var u=['tom','naerland'].join('.'); var d=['gmail','com'].join('.');
       var addr=u+String.fromCharCode(64)+d;
@@ -795,9 +737,19 @@
       }
       else if(!v.paused){ setTimeout(function(){ if(!v.classList.contains('on') || S.page!=='work') v.pause(); }, 950); }
     });
-    if(EL.work){ EL.work.classList.toggle('away', !!name && name!=='hero'); EL.work.classList.toggle('rig', name==='obelisken'); }
+    if(EL.work) EL.work.classList.toggle('away', !!name && name!=='hero');
   }
   window.addEventListener('scroll', workScroll, {passive:true});
+  // the tower is drawn for the Obelisken screen standing at the top of the viewport; shift it (and the bloom) by
+  // where that screen is now, so it comes up from below and leaves over the top with it
+  var OBX=WORKS.filter(function(w){ return w.getAttribute('data-work')==='obelisken'; })[0], BLOOM=document.getElementById('obx-workbloom');
+  function rigScroll(){
+    if(!OBX || S.page!=='work') return;
+    var t='translate3d(0,'+Math.round(OBX.getBoundingClientRect().top)+'px,0)';
+    if(EL.workcanvas) EL.workcanvas.style.transform=t;
+    if(BLOOM) BLOOM.style.transform=t;
+  }
+  window.addEventListener('scroll', rigScroll, {passive:true}); window.addEventListener('resize', rigScroll);
 
   // The arrow brings the next work up to fill the screen.
   if(EL.workmore) EL.workmore.addEventListener('click', function(e){ e.preventDefault();
