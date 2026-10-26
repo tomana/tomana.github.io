@@ -89,7 +89,7 @@
   .pk-arr.l{left:1px;} .pk-arr.r{right:1px;color:rgba(255,255,255,.25);}
   .pk-card.stk .pk-arr{display:flex;}
   .pk-card{position:relative;z-index:1;border:1px solid #3a3a3a;border-radius:3px;background:#262626;overflow:hidden;transition:transform .28s cubic-bezier(.3,1.6,.5,1),opacity .25s,box-shadow .25s;}
-  .pk-card .pk-th{display:block;aspect-ratio:1;border-radius:2px 2px 0 0;}
+  .pk-card .pk-th{display:block;width:100%;height:auto;aspect-ratio:1;border-radius:2px 2px 0 0;}
   .pk-card .pk-bar{display:flex;align-items:center;height:17px;font-size:9px;color:rgba(255,255,255,.75);}
   .pk-card .pk-bar span{flex:1;min-width:0;padding-left:4px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;}
   .pk-card .pk-bar i.cp{flex:0 0 auto;position:relative;width:5px;height:5px;margin:0 4px 0 2px;border:1px solid rgba(255,255,255,.55);border-radius:1px;}
@@ -904,20 +904,47 @@
   var seed=(Date.now()%2147483646)+1, id=0, judged=0, keeps=[], busy=false;
   function rnd(){ seed=seed*16807%2147483647; return (seed-1)/2147483646; }
   function hd(a,b){ var d=Math.abs(((a-b)%360+360)%360); return d>180?360-d:d; }
-  function gene(){ return {id:++id,v:1,k:rnd()*4|0,h1:rnd()*360,h2:rnd()*360,s:40+rnd()*50,f:3+rnd()*7,a:rnd()*180,x:20+rnd()*60,y:20+rnd()*60}; }
-  function child(p,sameCard){ var g={}; for(var k in p) g[k]=p[k];
+  // The cards are drawn as in the run-through sketch (playground/picker-run-through.html; operator, 10-26: "I like the
+  // graphics in the walkthrough in the cards, use those on the front"): a gene of a few numbers drawn into 72 px,
+  // stripes, rings, plasma, moire, a warp or blobs, a dark and a light hue, grain, sometimes the fixture's circle.
+  function clamp(v,a,b){ return v<a?a:v>b?b:v; }
+  function gene(){ return {id:++id,v:1,k:rnd()*6|0,h1:rnd()*360,h2:rnd()*360,s:.3+rnd()*.65,c:.25+rnd()*.75,
+    f:1.5+rnd()*8,a:rnd()*Math.PI,cx:(rnd()-.5)*.8,cy:(rnd()-.5)*.8,ring:rnd()<.4,w:rnd()*1.6}; }
+  function child(p,sameCard){ var g={}, d=function(x){ return (rnd()-.5)*x*.8; }; for(var k in p) g[k]=p[k];
     if(sameCard) g.v=Math.min(9,p.v+1); else { g.id=++id; g.v=1; }
-    g.h1+=(rnd()-.5)*40; g.h2+=(rnd()-.5)*36; g.f=Math.max(2.5,Math.min(11,g.f*(.75+rnd()*.5)));
-    g.a+=(rnd()-.5)*50; g.x=Math.max(10,Math.min(90,g.x+(rnd()-.5)*30)); g.y=Math.max(10,Math.min(90,g.y+(rnd()-.5)*30));
-    if(rnd()<.08) g.k=rnd()*4|0; return g; }
-  function taste(g){ return .62*(1-Math.min(1,hd(g.h2,28)/85)) + (g.k<2?.2:0) + (g.s>60?.1:0) + rnd()*.12; }
-  function col(h,s,l){ return 'hsl('+Math.round(h)+','+Math.round(s)+'%,'+l+'%)'; }
-  function paint(g){
-    var d=col(g.h1,g.s,14), l=col(g.h2,g.s,60), f=g.f.toFixed(1), f2=(2*g.f).toFixed(1);
-    if(g.k===0) return 'repeating-linear-gradient('+Math.round(g.a)+'deg,'+d+' 0 '+f+'px,'+l+' '+f+'px '+f2+'px)';
-    if(g.k===1) return 'repeating-radial-gradient(circle at '+Math.round(g.x)+'% '+Math.round(g.y)+'%,'+d+' 0 '+f+'px,'+l+' '+f+'px '+f2+'px)';
-    if(g.k===2) return 'radial-gradient(circle at '+Math.round(g.x)+'% '+Math.round(g.y)+'%,'+l+' 0 24%,transparent 25%),radial-gradient(circle at '+Math.round(100-g.y)+'% '+Math.round(g.x)+'%,'+l+' 0 15%,transparent 16%),'+d;
-    return 'repeating-conic-gradient(from '+Math.round(g.a)+'deg at '+Math.round(g.x)+'% '+Math.round(g.y)+'%,'+d+' 0 '+(g.f*3).toFixed(0)+'deg,'+l+' '+(g.f*3).toFixed(0)+'deg '+(g.f*6).toFixed(0)+'deg)';
+    g.k=rnd()<.05?rnd()*6|0:p.k; g.h1=p.h1+d(50); g.h2=p.h2+d(40); g.s=clamp(p.s+d(.25),.15,1); g.c=clamp(p.c+d(.3),.1,1);
+    g.f=clamp(p.f*(1+d(.6)),1.2,12); g.a=p.a+d(.9); g.cx=clamp(p.cx+d(.4),-.6,.6); g.cy=clamp(p.cy+d(.4),-.6,.6);
+    g.ring=rnd()<.1?!p.ring:p.ring; g.w=clamp(p.w+d(.8),0,2.4); return g; }
+  // the judge's made-up taste, the sketch's: warm amber on near-black, high contrast, stripes and rings
+  function taste(g){ return .5*(1-Math.min(1,hd(g.h2,28)/80)) + .22*g.c + .16*(g.k===0||g.k===1||g.k===3?1:0) + .12*(g.s>.55?1:0) + rnd()*.1; }
+  function hsl(h,s,l){ h=((h%360)+360)%360/360; var q=l<.5?l*(1+s):l+s-l*s, p=2*l-q;
+    function f(t){ if(t<0) t+=1; if(t>1) t-=1; return t<1/6?p+(q-p)*6*t:t<.5?q:t<2/3?p+(q-p)*(2/3-t)*6:p; }
+    return [f(h+1/3)*255,f(h)*255,f(h-1/3)*255]; }
+  function value(g,x,y){
+    var P=Math.PI, v, i, m;
+    switch(g.k){
+      case 0: v=Math.sin((x*Math.cos(g.a)+y*Math.sin(g.a))*g.f*P+g.w*Math.sin(y*3)); break;
+      case 1: v=Math.sin(Math.hypot(x-g.cx,y-g.cy)*g.f*P*1.3); break;
+      case 2: v=(Math.sin(x*g.f*2)+Math.sin(y*g.f*2.6+g.a*3)+Math.sin((x+y)*g.f*1.4))/3*1.6; break;
+      case 3: v=Math.sin(Math.hypot(x-g.cx,y-g.cy)*g.f*P)*Math.sin(Math.hypot(x+g.cx,y+g.cy)*g.f*P)*1.4; break;
+      case 4: v=Math.sin(x*g.f*P+g.w*2.5*Math.sin(y*g.f*.8*P+g.a)); break;
+      default:
+        for(m=0,i=0;i<3;i++){ var bx=Math.sin(g.a*3+i*2.1)*.55, by=Math.cos(g.a*2+i*1.7)*.55; m+=.12/((x-bx)*(x-bx)+(y-by)*(y-by)+.02); }
+        v=Math.sin(m*g.f*.25);
+    }
+    return clamp(.5+.5*v*(.5+g.c*1.4),0,1);
+  }
+  var TN=72;
+  function draw(cv,g){
+    var x=cv.getContext('2d'), im=x.createImageData(TN,TN), d=im.data, n=(g.id*7919+g.v*131+13)%2147483646+1;
+    var a=hsl(g.h1,g.s,.07+.13*(1-g.c)), b=hsl(g.h2,g.s,.5+.2*g.s);
+    for(var j=0;j<TN;j++) for(var i=0;i<TN;i++){
+      var t=value(g,i/TN*2-1,j/TN*2-1), o=(j*TN+i)*4; n=n*16807%2147483647; var e=(n/2147483647-.5)*10;
+      d[o]=a[0]+(b[0]-a[0])*t+e; d[o+1]=a[1]+(b[1]-a[1])*t+e; d[o+2]=a[2]+(b[2]-a[2])*t+e; d[o+3]=255;
+    }
+    x.putImageData(im,0,0);
+    if(g.ring){ x.strokeStyle='rgba('+(b[0]*.6+100|0)+','+(b[1]*.6+100|0)+','+(b[2]*.6+100|0)+',.85)'; x.lineWidth=2;
+      x.beginPath(); x.arc(TN/2+g.cx*TN*.3,TN/2+g.cy*TN*.3,TN*.17,0,7); x.stroke(); }
   }
 
   // ---- the usage boxes: one an agent, the session over the week, the text knocked out of the fill ----
@@ -936,7 +963,7 @@
   // ---- the grid: each card in a slot with room for its stack's fan ----
   // a card shows its newest version; each older one is an outline of its stack (three at most), and a stack gets ‹ ›
   function show(slot,g){ var card=slot.card; card.g=g;
-    card.querySelector('.pk-th').style.background=paint(g);
+    draw(card.querySelector('.pk-th'), g);
     card.querySelector('span').textContent='v'+g.id+(g.v>1?'.'+g.v:'');
     slot.fans.forEach(function(f,k){ f.style.opacity=g.v>k+1?1:0; });
     card.classList.toggle('stk', g.v>1); }
@@ -944,7 +971,7 @@
   for(var i=0;i<9;i++){
     var slot=document.createElement('div'); slot.className='pk-slot';
     slot.innerHTML='<div class="pk-fan f3"></div><div class="pk-fan f2"></div><div class="pk-fan f1"></div>'+
-      '<div class="pk-card"><i class="pk-th"></i><b class="pk-arr l">&lsaquo;</b><b class="pk-arr r">&rsaquo;</b>'+
+      '<div class="pk-card"><canvas class="pk-th" width="72" height="72"></canvas><b class="pk-arr l">&lsaquo;</b><b class="pk-arr r">&rsaquo;</b>'+
       '<div class="pk-bar"><span></span><i class="cp"></i><em>&minus;</em><em>+</em></div></div>';
     slot.card=slot.querySelector('.pk-card'); slot.fans=[slot.querySelector('.f1'),slot.querySelector('.f2'),slot.querySelector('.f3')];
     var g=gene(); if(rnd()<.4) g.v=2+(rnd()*2|0);   // some start as stacks
@@ -967,7 +994,7 @@
     if(busy || !inView()) return;
     var free=slots.filter(function(sl){ var c=sl.card.classList; return !c.contains('out') && !c.contains('kept'); });
     if(!free.length) return;
-    var slot=free[rnd()*free.length|0], card=slot.card, keep=taste(card.g)>.66, em=card.querySelectorAll('em')[keep?1:0];
+    var slot=free[rnd()*free.length|0], card=slot.card, keep=taste(card.g)>.6, em=card.querySelectorAll('em')[keep?1:0];
     busy=true;
     cur.style.left=(slot.offsetLeft+card.offsetLeft+em.offsetLeft+em.offsetWidth/2)+'px';
     cur.style.top=(slot.offsetTop+card.offsetTop+em.offsetTop+em.offsetHeight/2)+'px';
