@@ -41,13 +41,13 @@
   /* The first screen is the obelisk video alone; the rig drawing comes up with the Obelisken screen in the list
      (operator, 10-26: "Have the ovelisken graphic on a card in the scrollable work section, just keep the video on the
      main work page"). The arrow belongs to the first screen. */
-  #obx-work #obx-workmore{transition:opacity .6s ease;}
+
   /* The tower and its dark bloom move with the Obelisken screen (operator, 10-26: "make the obelisken scroll with the
      page, but the dark bloom and the negative is great"): they stay fixed, in the wrap, so the difference blend still
      reads the video under them (inside the scrolling list it would see only the list), and the script shifts them by
      the screen's offset as the page scrolls (rigScroll). */
   #obx-workcanvas,#obx-workbloom{will-change:transform;}
-  #obx-work.away #obx-workmore{opacity:0;pointer-events:none;}
+  #obx-work.away #obx-workmore{pointer-events:none;}
   #obx-worklist{display:none;position:relative;z-index:1;margin-top:calc(100vh - var(--peek,56px));margin-top:calc(100svh - var(--peek,56px));font-family:'Martian Mono',monospace;color:#fff;-webkit-font-smoothing:antialiased;}
   html.obx-scroll #obx-worklist{display:block;}
   .wk{position:relative;display:block;min-height:100vh;min-height:100svh;padding:0 20px;}
@@ -56,7 +56,7 @@
   /* the tag is just the number and the year (operator, 10-26: "i want 01 2026, 02 2026, 03 2019 to be the title or the
      sections"); the name is the big title below */
   .wk-tag span{color:rgba(255,255,255,.85);}
-  .wk-body{position:absolute;z-index:1;left:20px;right:20px;bottom:11vh;bottom:11svh;text-shadow:0 1px 14px rgba(0,0,0,.55);}
+  .wk-body{position:absolute;z-index:1;left:20px;right:20px;top:76%;text-shadow:0 1px 14px rgba(0,0,0,.55);}   /* the same line on every screen */
   .obx-bgv[data-work="illd"]{filter:brightness(1.35) contrast(1.08);}   /* a dark room: lift it a little */
   .wk-name{margin:0 0 18px;font-family:'Archivo',sans-serif;font-weight:700;font-size:clamp(30px,6.4vw,66px);line-height:.95;letter-spacing:.2em;text-indent:.2em;text-transform:uppercase;color:#eef0f3;}   /* the indent balances the spacing after the last letter, as OBELISKEN's on the splash */
   .wk-desc{margin:0;max-width:600px;font-size:13px;line-height:1.75;letter-spacing:.02em;color:rgba(255,255,255,.88);}
@@ -64,12 +64,12 @@
      10-26: "I want the full link to show under picker and illd as before, obelisken has no link, and i want the titles to
      be centered"). External sites only, no pages of our own. */
   .wk-body{text-align:center;}
-  /* ↓ at the foot of each screen but the last: straight on to the next (operator, 10-26: "have the downward arrow to go
-     quickly to the next section instead of scrolling"); the first screen's arrow does the same */
+  /* ↓ at the foot of each screen but the last, straight on to the next; with every screen one screen tall they sit in
+     the same place (operator, 10-26: "with the new better spacing the arrows in the sections make sense") */
   .wk-next{position:absolute;z-index:1;left:50%;bottom:3vh;bottom:3svh;transform:translate(-50%,0);padding:8px 16px;color:#fff;text-decoration:none;font-size:16px;line-height:1;mix-blend-mode:difference;animation:obx-bob 2.4s ease-in-out infinite;}
   .wk-link{display:inline-block;font-size:13px;letter-spacing:.04em;color:#fff;text-decoration:none;border-bottom:1px solid rgba(255,255,255,.5);padding-bottom:2px;}
   
-  @media (min-width:900px){ .wk{padding:0 40px;} .wk-body{left:40px;right:40px;bottom:13vh;bottom:13svh;} }
+  @media (min-width:900px){ .wk{padding:0 40px;} .wk-body{left:40px;right:40px;top:74%;} }
   /* The picker screen's drawing, as the obelisk screen has its rig: a small live picker, made up (no real
      cards), in HTML, centred over the clip. On top the agents' usage boxes (the picker's two thick bars a
      box, session and week, the text knocked out of the fill); then the tabs, AUTO and a grid where some
@@ -124,16 +124,15 @@
   .pk-lab.l2{left:calc(100% + 16px);} .pk-lab.l2::after{right:calc(100% + 3px);}
   .pk-lab.l3{top:12px;} .pk-lab.l1{top:150px;} .pk-lab.l2{top:250px;}
   .pk-lab.ping{color:#fff;}
-  /* A phone: the mock nearly as wide as the screen, below the nav, the few words after it (operator, 10-26: "Make the
-     picker bigger, and remove most if the text"); the side labels have no room there. The holder takes the scaled
-     mock's height (--pkh x --pks, set by the script), so the screen grows to fit it. */
-  @media (max-width:899px){
-    .wk[data-work="picker"]{display:flex;flex-direction:column;padding-bottom:6vh;padding-bottom:6svh;}
-    .pk-hold{position:relative;height:calc(var(--pkh,400px) * var(--pks,1));margin:122px 0 18px;}
-    .pk-hold .pk{top:0;}
-    .wk[data-work="picker"] .wk-body{position:relative;left:auto;right:auto;bottom:auto;margin-top:auto;}
-    .pk-lab{display:none;}
-  }
+  /* Every screen is one screen tall, its title in the same place (operator, 10-26: "space the sections out more evenly,
+     they seem different sizes now"); the mock fills the room between the tag and the title (the script sizes it: as
+     wide as a phone allows, at most 1.3x on wider screens). A phone has no room for the side labels. */
+  @media (max-width:899px){ .pk{top:64px;} .pk-lab{display:none;} }
+  /* a phone on its side (the script sets .side): the mock at the right, centred top to bottom, the title in the room
+     left of it (operator, 10-26: "Way too large in landscape mobile") */
+  .pk.side{top:50%;left:auto;right:24px;transform-origin:100% 50%;
+    transform:translate(calc((1 - var(--pkp,1)) * 60px),-50%) scale(calc(var(--pks) * (.92 + .08 * var(--pkp,1))));}
+  .wk.side .wk-body{right:40%;}
 </style>
 </head>
 <body>
@@ -162,7 +161,7 @@
     <video class="obx-bgv" data-work="illd" data-start="7.5" preload="metadata" loop muted playsinline poster="img/work/illd-vigeland.jpg">
       <source src="illd.mp4" type="video/mp4">
     </video>
-    <div id="obx-workbloom" style="position:fixed;top:0;left:0;width:100%;height:100vh;height:100svh;pointer-events:none;background:radial-gradient(ellipse 34vh 44vh at 50% 42%,rgba(0,0,0,.88) 0%,rgba(0,0,0,.62) 42%,rgba(0,0,0,0) 100%);background:radial-gradient(ellipse 34svh 44svh at 50% 42%,rgba(0,0,0,.88) 0%,rgba(0,0,0,.62) 42%,rgba(0,0,0,0) 100%);"></div>
+    <canvas id="obx-workbloom" style="position:absolute;inset:0;width:100%;height:100%;display:block;pointer-events:none;"></canvas>
     <canvas id="obx-workcanvas" style="position:absolute;inset:0;width:100%;height:100%;display:block;mix-blend-mode:difference;pointer-events:none;"></canvas>
     <a id="obx-workmore" href="#obx-worklist" aria-label="More work" style="position:absolute;left:50%;bottom:calc(var(--peek,64px) + 4px);transform:translate(-50%,0);padding:8px 16px;color:#fff;mix-blend-mode:difference;text-decoration:none;font-family:'Martian Mono',monospace;font-size:16px;line-height:1;animation:obx-bob 2.4s ease-in-out infinite;">&#8595;</a>
   </div>
@@ -199,7 +198,7 @@
   </article>
   <article class="wk" data-work="picker">
     <div class="wk-tag"><span>02</span><span>2026</span></div>
-    <div class="pk-hold"><div class="pk" aria-hidden="true">
+    <div class="pk" aria-hidden="true">
       <div class="pk-win">
         <div class="pk-use"><div class="pk-ubox"></div><div class="pk-ubox"></div><div class="pk-ubox"></div><div class="pk-gear"><svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3.8 13.4V10M3.8 7.6V2.6M2.5 10h2.6M8 2.6V6M8 8.4v5M6.7 6h2.6M12.2 2.6v6M12.2 11v2.4M10.9 11h2.6"/></svg></div></div>
         <div class="pk-top"><span class="on">visuals_picked</span><span>music_hybrid</span><span class="pk-dots">&middot;&middot;&middot;</span></div>
@@ -210,10 +209,10 @@
       <span class="pk-lab l3">THEIR TIME</span>
       <span class="pk-lab l1">AGENTS MAKE</span>
       <span class="pk-lab l2">YOU PICK</span>
-    </div></div>
+    </div>
     <div class="wk-body">
       <h2 class="wk-name">Picker</h2>
-      <a class="wk-link" href="https://github.com/tomana/picker" target="_blank" rel="noopener">github.com/tomana/picker &rarr;</a>
+      <a class="wk-link" href="https://github.com/tomana/picker" target="_blank" rel="noopener">github.com/tomana/picker</a>
     </div>
     <a class="wk-next" href="#" aria-label="Next work">&#8595;</a>
   </article>
@@ -221,7 +220,7 @@
     <div class="wk-tag"><span>03</span><span>2019</span></div>
     <div class="wk-body">
       <h2 class="wk-name">Illd</h2>
-      <a class="wk-link" href="https://vimeo.com/327783057" target="_blank" rel="noopener">vimeo.com/327783057 &rarr;</a>
+      <a class="wk-link" href="https://vimeo.com/327783057" target="_blank" rel="noopener">vimeo.com/327783057</a>
     </div>
   </article>
 </section>
@@ -237,7 +236,7 @@
 (function(){
   // ---- element handles ----
   var EL = {};
-  ['wrap','canvas','vig','flare','nav','wm','wmbox','work','video','workcanvas','workmore','worklist','contact','video2','video3','mail','cv',
+  ['wrap','canvas','vig','flare','nav','wm','wmbox','work','video','workcanvas','workbloom','workmore','worklist','contact','video2','video3','mail','cv',
    'home','navwork','navcv','navcontact'].forEach(function(k){ EL[k]=document.getElementById('obx-'+k); });
 
   var FINT=1.15, FSPREAD=1, FSEP=1;                 // flare tuning (sliders removed)
@@ -501,6 +500,24 @@
       var g=Math.round(dd.v*255); ctx.fillStyle='rgb('+g+','+g+','+g+')'; ctx.fill();
       ctx.lineWidth=Math.max(0.6,DPR*0.6); ctx.strokeStyle='rgba(255,255,255,'+OV.edge+')'; ctx.stroke();
     }
+    // The dark bloom round the tower, with the tower's own shape cut out of it: the bloom darkens the video around
+    // the figure, the figure itself shows the video at full strength in its negative (operator, 10-26: "make it so
+    // that the dark bloom is not under the negative figure itself"). The frame's gaps keep the dark.
+    var bc=EL.workbloom, bx=bc && bc.getContext('2d');
+    if(bx){
+      bx.clearRect(0,0,W,H);
+      var rx=H*0.34, ry=H*0.44;
+      bx.save(); bx.translate(rigX,rigY); bx.scale(rx/ry,1);
+      var bg=bx.createRadialGradient(0,0,0,0,0,ry);
+      bg.addColorStop(0,'rgba(0,0,0,.88)'); bg.addColorStop(.42,'rgba(0,0,0,.62)'); bg.addColorStop(1,'rgba(0,0,0,0)');
+      bx.fillStyle=bg; bx.fillRect(-ry*2,-ry*2,ry*4,ry*4); bx.restore();
+      bx.globalCompositeOperation='destination-out'; bx.fillStyle='#000'; bx.strokeStyle='#000'; bx.lineWidth=Math.max(1,DPR);
+      for(var b2=0;b2<draw.length;b2++){
+        var sb=draw[b2].s; bx.beginPath(); bx.moveTo(sb[0][0],sb[0][1]);
+        for(var sj=1;sj<sb.length;sj++) bx.lineTo(sb[sj][0],sb[sj][1]); bx.closePath(); bx.fill(); bx.stroke();
+      }
+      bx.globalCompositeOperation='source-over';
+    }
   }
 
   // ---- the splash: the obelisk (and the IVAR / CHEOPS / KALLAX flip before it) on the main canvas ----
@@ -661,6 +678,7 @@
     var W=w.clientWidth||window.innerWidth, H=w.clientHeight||window.innerHeight;
     cv.width=Math.round(W*DPR); cv.height=Math.round(H*DPR);
     if(EL.canvas){ EL.canvas.width=cv.width; EL.canvas.height=cv.height; A._blank=false; }
+    if(EL.workbloom){ EL.workbloom.width=cv.width; EL.workbloom.height=cv.height; }
     if(S.page==='work'){ workPeek(); renderOverlay(); }   // sizing the canvas clears it
   }
 
@@ -754,6 +772,9 @@
   var OBX=WORKS.filter(function(w){ return w.getAttribute('data-work')==='obelisken'; })[0], BLOOM=document.getElementById('obx-workbloom');
   function rigScroll(){
     if(!OBX || S.page!=='work') return;
+    // the first screen's arrow fades as soon as the page moves: gone after 80 px (operator, 10-26: "The first arrow
+    // should fade faster")
+    if(EL.workmore) EL.workmore.style.opacity=String(Math.max(0, 1-(window.scrollY||0)/80));
     var t='translate3d(0,'+Math.round(OBX.getBoundingClientRect().top)+'px,0)';
     if(EL.workcanvas) EL.workcanvas.style.transform=t;
     if(BLOOM) BLOOM.style.transform=t;
@@ -948,12 +969,15 @@
   // (measured again once the fonts are in: before, the mock is shorter and the words under it rode up into it)
   var lastW=0, lastH=0;
   function fit(){
-    var W=window.innerWidth, H=window.innerHeight, wide=W>=900, h=root.offsetHeight||400;
-    if(W===lastW && h===lastH && (!wide || Math.abs(H-fit.H)<1)) return;   // a phone's address bar changes only H
-    lastW=W; lastH=h; fit.H=H;
-    var s = wide ? Math.min(1.3, Math.max(.8, (H-84-300)/h)) : (W-28)/300;
+    var W=window.innerWidth, H=sec.clientHeight||window.innerHeight, wide=W>=900, h=root.offsetHeight||400,
+        body=sec.querySelector('.wk-body'), side=W>H*1.25 && H<560;   // a phone on its side
+    root.classList.toggle('side', side); sec.classList.toggle('side', side);
+    // above the title: from its top to just above the title; beside it: the screen's height less a margin
+    var room=side ? H-40 : (body ? body.offsetTop : H*.74) - 18 - (wide ? 84 : 64);
+    if(W===lastW && h===lastH && Math.abs(room-fit.room)<1) return;
+    lastW=W; lastH=h; fit.room=room;
+    var s=Math.min(side ? W*0.34/300 : wide ? 1.3 : (W-28)/300, room/h);
     root.style.setProperty('--pks', s.toFixed(3));
-    sec.style.setProperty('--pks', s.toFixed(3)); sec.style.setProperty('--pkh', h+'px');   // the holder reads both
   }
   fit(); window.addEventListener('resize', fit); window.addEventListener('load', fit);
   if(document.fonts && document.fonts.ready) document.fonts.ready.then(fit);
