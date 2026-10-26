@@ -48,12 +48,10 @@
   .wk-tag span:first-child,.wk-tag span:last-child{color:rgba(255,255,255,.62);}
   .wk-body{position:absolute;z-index:1;left:20px;right:20px;bottom:11vh;bottom:11svh;max-width:720px;text-shadow:0 1px 14px rgba(0,0,0,.55);}
   .obx-bgv[data-work="illd"]{filter:brightness(1.35) contrast(1.08);}   /* a dark room: lift it a little */
-  .wk-verdict{min-height:3.6em;margin:0 0 14px;font-size:15px;line-height:1.6;letter-spacing:.03em;color:#fff;opacity:0;transition:opacity .18s ease;}
-  .wk-verdict.on{opacity:1;}
   .wk-name{margin:0 0 18px;font-family:'Archivo',sans-serif;font-weight:700;font-size:clamp(30px,6.4vw,66px);line-height:.95;letter-spacing:.2em;text-transform:uppercase;color:#eef0f3;}
   .wk-desc{margin:0;max-width:600px;font-size:13px;line-height:1.75;letter-spacing:.02em;color:rgba(255,255,255,.88);}
   .wk-link{display:inline-block;margin-top:20px;font-size:13px;letter-spacing:.04em;color:#fff;text-decoration:none;border-bottom:1px solid rgba(255,255,255,.5);padding-bottom:2px;}
-  .wk-credit{margin:16px 0 0;font-size:10px;line-height:1.6;letter-spacing:.04em;color:rgba(255,255,255,.5);}
+  
   @media (min-width:900px){ .wk{padding:0 40px 0 190px;} .wk-body{left:190px;bottom:13vh;bottom:13svh;} }
   /* The picker screen's drawing, as the obelisk screen has its rig: a small live picker, made up (no real
      cards), in HTML, centred over the clip. On top the agents' usage boxes (the picker's two thick bars a
@@ -71,7 +69,7 @@
   .pk-kline{position:absolute;inset:0;display:flex;justify-content:space-between;align-items:center;padding:0 3px;white-space:nowrap;font-size:7px;line-height:1;color:#d8d8d8;}
   .pk-kfill{position:absolute;left:0;top:0;bottom:0;overflow:hidden;transition:width .6s ease;}
   .pk-kfill .pk-kline{right:auto;color:#111;}
-  .pk-gear{flex:0 0 28px;display:flex;align-items:center;justify-content:center;background:#242424;font-size:12px;color:rgba(255,255,255,.7);}
+  .pk-gear{flex:0 0 28px;display:flex;align-items:center;justify-content:center;background:#242424;color:#ececec;}   /* the picker's own settings glyph (static/app/dom.js GLYPH.sliders) */
   .pk-top{display:flex;gap:12px;align-items:baseline;font-size:10px;letter-spacing:.02em;color:rgba(255,255,255,.5);padding:2px 2px 7px;border-bottom:1px solid rgba(255,255,255,.12);}
   .pk-top .on{color:#fff;border-bottom:1px solid #fff;padding-bottom:3px;}
   .pk-top .pk-dots{margin-left:auto;}
@@ -101,7 +99,6 @@
   .pk-card.new{opacity:0;transform:translateY(-14px) scale(.8);}
   .pk-card.ver{transform:translate(-3px,-3px);}
   .pk-card .pk-bar em.hit-m{background:rgba(255,255,255,.3);} .pk-card .pk-bar em.hit-p{background:rgba(120,220,110,.6);}
-  .pk-foot{display:flex;justify-content:space-between;margin-top:7px;font-size:8px;letter-spacing:.08em;color:rgba(255,255,255,.45);}
   .pk-cur{position:absolute;z-index:2;left:150px;top:200px;width:14px;height:14px;margin:-7px 0 0 -7px;border-radius:50%;background:rgba(255,255,255,.9);box-shadow:0 0 0 4px rgba(255,255,255,.25);transition:left .32s ease,top .32s ease,transform .12s;}
   .pk-cur.tap{transform:scale(.6);}
   .pk-lab{position:absolute;font-size:calc(10px / var(--pks));letter-spacing:.12em;white-space:nowrap;color:rgba(255,255,255,.78);text-shadow:0 1px 8px rgba(0,0,0,.8);transition:color .2s;}
@@ -118,7 +115,6 @@
     .pk-hold{position:relative;height:calc(var(--pkh,400px) * var(--pks,1));margin:122px 0 18px;}
     .pk-hold .pk{top:0;}
     .wk[data-work="picker"] .wk-body{position:relative;left:auto;right:auto;bottom:auto;margin-top:auto;}
-    .wk[data-work="picker"] .wk-verdict{min-height:3.2em;}
     .pk-lab{display:none;}
   }
 </style>
@@ -151,7 +147,7 @@
     </video>
     <canvas id="obx-workcanvas" style="position:absolute;inset:0;width:100%;height:100%;display:block;mix-blend-mode:difference;pointer-events:none;"></canvas>
     <div id="obx-worktext" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:14px;pointer-events:none;font-family:'Martian Mono',monospace;color:#fff;mix-blend-mode:difference;padding-bottom:18vh;">
-      <a id="obx-worklink" href="https://vimeo.com/tomana" target="_blank" rel="noopener" style="font-size:clamp(18px,2.4vw,30px);letter-spacing:.04em;color:#fff;text-decoration:none;border-bottom:1px solid rgba(255,255,255,.4);padding-bottom:2px;">vimeo.com/tomana</a>
+      <a id="obx-worklink" href="/work/obelisken/" style="font-size:clamp(18px,2.4vw,30px);letter-spacing:.04em;color:#fff;text-decoration:none;border-bottom:1px solid rgba(255,255,255,.4);padding-bottom:2px;">obelisken &rarr;</a>
     </div>
     <a id="obx-workmore" href="#obx-worklist" aria-label="More work" style="position:absolute;left:50%;bottom:calc(var(--peek,64px) + 4px);transform:translate(-50%,0);padding:8px 16px;color:#fff;mix-blend-mode:difference;text-decoration:none;font-family:'Martian Mono',monospace;font-size:16px;line-height:1;animation:obx-bob 2.4s ease-in-out infinite;">&#8595;</a>
   </div>
@@ -180,14 +176,13 @@
 
 <section id="obx-worklist">
   <article class="wk" data-work="picker">
-    <div class="wk-tag"><span>02</span><span>The picker</span><span>2026</span></div>
+    <div class="wk-tag"><span>02</span><span>Picker</span><span>2026</span></div>
     <div class="pk-hold"><div class="pk" aria-hidden="true">
       <div class="pk-win">
-        <div class="pk-use"><div class="pk-ubox"></div><div class="pk-ubox"></div><div class="pk-ubox"></div><div class="pk-gear">&#9881;</div></div>
+        <div class="pk-use"><div class="pk-ubox"></div><div class="pk-ubox"></div><div class="pk-ubox"></div><div class="pk-gear"><svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3.8 13.4V10M3.8 7.6V2.6M2.5 10h2.6M8 2.6V6M8 8.4v5M6.7 6h2.6M12.2 2.6v6M12.2 11v2.4M10.9 11h2.6"/></svg></div></div>
         <div class="pk-top"><span class="on">visuals_picked</span><span>music_hybrid</span><span class="pk-dots">&middot;&middot;&middot;</span></div>
         <div class="pk-auto">&#9656; AUTO <i>ON</i><span class="pk-q">queue &middot; 2</span></div>
         <div class="pk-grid"></div>
-        <div class="pk-foot"><span class="pk-n">0 judged</span><span>0 words typed</span></div>
       </div>
       <div class="pk-cur"></div>
       <span class="pk-lab l3">THEIR TIME</span>
@@ -195,17 +190,14 @@
       <span class="pk-lab l2">YOU PICK</span>
     </div></div>
     <div class="wk-body">
-      <p class="wk-verdict" aria-hidden="true"></p>
-      <h2 class="wk-name">The picker</h2>
-      <a class="wk-link" href="playground/picker-run-through.html">the run-through &rarr;</a>
-      <p class="wk-credit">In the clip: Miranda Priestly's run-through, The Devil Wears Prada (2006).</p>
+      <h2 class="wk-name">Picker</h2>
+      <a class="wk-link" href="https://github.com/tomana/picker" target="_blank" rel="noopener">github.com/tomana/picker &rarr;</a>
     </div>
   </article>
   <article class="wk" data-work="illd">
     <div class="wk-tag"><span>03</span><span>Illd</span><span>2019</span></div>
     <div class="wk-body">
       <h2 class="wk-name">Illd</h2>
-      <p class="wk-desc">Live at Emanuel Vigeland Museum. Realtime visualization, with Øyvind Mellbye (analog electronics) and Bjørnar Steinnes Luteberget (realtime audio synthesis).</p>
       <a class="wk-link" href="https://vimeo.com/327783057" target="_blank" rel="noopener">vimeo.com/327783057 &rarr;</a>
     </div>
   </article>
@@ -823,20 +815,6 @@
     if(EL.worklink) EL.worklink.style.pointerEvents=(name==='obelisken')?'auto':'none';
   }
   window.addEventListener('scroll', workScroll, {passive:true});
-  // The picker's clip carries no captions (cropped to fill a phone they came out huge): its three
-  // verdicts are page text, shown in time with it. Times from the clip's own caption track.
-  // (Nigel's stretch is cut out of the clip, so the last two come 3.34 s earlier than in the film's clip.)
-  var VERDICTS=[[0.51,3.35,"No. And I\u2019ve seen all this before."],[9.68,11.26,"No."],
-                [13.94,16.94,"Why is it so impossible to put together a decent run-through?"]];
-  var PICKV=BGV.filter(function(v){ return v.getAttribute('data-work')==='picker'; })[0];
-  var VERDICT=document.querySelector('#obx-worklist .wk-verdict');
-  function showVerdict(){
-    if(!PICKV || !VERDICT) return;
-    var t=PICKV.currentTime, line='';
-    if(S.bg==='picker' && !PICKV.paused) VERDICTS.forEach(function(v){ if(t>=v[0] && t<v[1]) line=v[2]; });
-    if(line) VERDICT.textContent='\u201c'+line+'\u201d';
-    VERDICT.classList.toggle('on', !!line);
-  }
 
   // The arrow brings the next work up to fill the screen.
   if(EL.workmore) EL.workmore.addEventListener('click', function(e){ e.preventDefault();
@@ -883,7 +861,7 @@
   (function loop(t){
     try{
       renderCanvas(t);
-      if(S.page==='work'){ BGV.forEach(function(v){ if(v.classList.contains('on') && v.paused) v.play().catch(function(){}); }); showVerdict(); }
+      if(S.page==='work'){ BGV.forEach(function(v){ if(v.classList.contains('on') && v.paused) v.play().catch(function(){}); }); }
       else if(S.page==='contact' && EL.video2 && EL.video2.paused){ EL.video2.play().catch(function(){}); }
       else if(S.page==='cv' && EL.video3 && EL.video3.paused){ EL.video3.play().catch(function(){}); }
     }catch(e){ /* keep running */ }
@@ -900,10 +878,10 @@
 (function(){
   var root=document.querySelector('.pk'); if(!root) return;
   var sec=root.closest(".wk"), grid=root.querySelector('.pk-grid'), cur=root.querySelector('.pk-cur'),
-      cnt=root.querySelector('.pk-n'), queue=root.querySelector('.pk-q'),
+      queue=root.querySelector('.pk-q'),
       labMake=root.querySelector('.l1'), labPick=root.querySelector('.l2'), labTime=root.querySelector('.l3'),
       uboxes=[].slice.call(root.querySelectorAll('.pk-ubox'));
-  var seed=(Date.now()%2147483646)+1, id=0, judged=0, keeps=[], busy=false;
+  var seed=(Date.now()%2147483646)+1, id=0, keeps=[], busy=false;
   function rnd(){ seed=seed*16807%2147483647; return (seed-1)/2147483646; }
   function hd(a,b){ var d=Math.abs(((a-b)%360+360)%360); return d>180?360-d:d; }
   // The cards are drawn as in the run-through sketch (playground/picker-run-through.html; operator, 10-26: "I like the
@@ -1002,7 +980,6 @@
     cur.style.top=(slot.offsetTop+card.offsetTop+em.offsetTop+em.offsetHeight/2)+'px';
     setTimeout(function(){   // you pick: a tap
       cur.classList.add('tap'); em.classList.add(keep?'hit-p':'hit-m'); ping(labPick);
-      judged++; cnt.textContent=judged+' judged';
       setTimeout(function(){
         cur.classList.remove('tap'); em.classList.remove('hit-p','hit-m'); busy=false;
         if(keep){
