@@ -807,8 +807,9 @@
   window.addEventListener('scroll', workScroll, {passive:true});
   // The picker's clip carries no captions (cropped to fill a phone they came out huge): its three
   // verdicts are page text, shown in time with it. Times from the clip's own caption track.
-  var VERDICTS=[[0.51,3.35,"No. And I\u2019ve seen all this before."],[13.02,14.6,"No."],
-                [17.28,20.28,"Why is it so impossible to put together a decent run-through?"]];
+  // (Nigel's stretch is cut out of the clip, so the last two come 3.34 s earlier than in the film's clip.)
+  var VERDICTS=[[0.51,3.35,"No. And I\u2019ve seen all this before."],[9.68,11.26,"No."],
+                [13.94,16.94,"Why is it so impossible to put together a decent run-through?"]];
   var PICKV=BGV.filter(function(v){ return v.getAttribute('data-work')==='picker'; })[0];
   var VERDICT=document.querySelector('#obx-worklist .wk-verdict');
   function showVerdict(){
