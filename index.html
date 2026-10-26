@@ -25,27 +25,36 @@
     60%{opacity:1;}
     100%{opacity:1;letter-spacing:.30em;filter:blur(0);transform:translateY(0) scale(1);}
   }
-  /* Work: the obelisk fills the first screen, the other works scroll in below it. The PAGE scrolls
-     (html.obx-scroll, Work only): an inner scroller looks unscrolled to a phone app's pull-to-refresh,
-     which then reloads on every pull down. The list starts a peek above the bottom of the first
-     screen (--peek, set from the first picture: about a fifth of it shows under the obelisk) and
-     slides up over the fixed obelisk; the nav and the band behind it stay above both. */
+  /* Every page stands on a video that fills the screen edge to edge: fixed, the LARGE viewport tall
+     (100lvh), so it still reaches the bottom when a phone's address bar slides away; the text keeps to
+     the small viewport. Fixed, the videos escape the wrap's clip but still fade with their page. */
+  .obx-bgv{position:fixed;top:0;left:0;width:100%;height:100vh;height:100lvh;object-fit:cover;display:block;opacity:0;transition:opacity .9s ease;}
+  .obx-bgv.on{opacity:1;}
+  /* Work: one screen per work. The obelisk is the first screen; each work after it is a screen of its
+     own, and the background crossfades to its video as it comes up past the middle of the screen. The
+     PAGE scrolls (html.obx-scroll, Work only): an inner scroller looks unscrolled to a phone app's
+     pull-to-refresh, which then reloads on every pull down. The next work's label peeks above the bottom
+     of the first screen (--peek), so it shows there is more below. */
   @keyframes obx-bob{ 0%,100%{transform:translate(-50%,0);} 50%{transform:translate(-50%,5px);} }
   html.obx-scroll{overflow-x:hidden;overflow-y:auto;}
   html.obx-scroll body{overflow:visible;}
-  #obx-worklist{display:none;position:relative;z-index:1;margin-top:calc(100vh - var(--peek,64px));margin-top:calc(100svh - var(--peek,64px));background:#000;border-top:1px solid rgba(255,255,255,.16);padding:18px 20px 64px;font-family:'Martian Mono',monospace;color:#fff;-webkit-font-smoothing:antialiased;}
-  .wk-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,400px),1fr));gap:44px 28px;max-width:1100px;margin:0 auto;}
-  .wk{display:block;color:#fff;text-decoration:none;}
-  .wk img,.wk video{display:block;width:100%;height:auto;aspect-ratio:16/9;object-fit:cover;background:#111;transition:opacity .25s;}
-  .wk:hover img,.wk:hover video{opacity:.8;}
-  .wk-head{display:flex;gap:14px;align-items:baseline;margin-top:14px;}
-  .wk-year{font-size:11px;letter-spacing:.1em;color:rgba(255,255,255,.5);}
-  .wk-title{font-size:13px;letter-spacing:.12em;text-transform:uppercase;line-height:1.5;}
-  .wk-desc{margin:8px 0 0;font-size:12px;line-height:1.7;letter-spacing:.02em;color:rgba(255,255,255,.66);}
+  #obx-work #obx-workcanvas,#obx-work #obx-worktext,#obx-work #obx-workmore{transition:opacity .6s ease;}
+  #obx-work.away #obx-workcanvas,#obx-work.away #obx-worktext,#obx-work.away #obx-workmore{opacity:0;}
+  #obx-worklist{display:none;position:relative;z-index:1;margin-top:calc(100vh - var(--peek,56px));margin-top:calc(100svh - var(--peek,56px));font-family:'Martian Mono',monospace;color:#fff;-webkit-font-smoothing:antialiased;}
   html.obx-scroll #obx-worklist{display:block;}
-  #obx-workshade{position:fixed;top:0;left:0;right:0;height:210px;z-index:20;pointer-events:none;opacity:0;
-    background:linear-gradient(#000 0,#000 150px,rgba(0,0,0,0) 210px);}
-  @media (min-width:900px){ #obx-worklist{padding:22px 40px 80px 190px;} #obx-workshade{display:none;} }
+  .wk{position:relative;display:block;min-height:100vh;min-height:100svh;padding:0 20px;}
+  .wk::after{content:'';position:absolute;left:0;right:0;bottom:0;height:75%;pointer-events:none;background:linear-gradient(rgba(0,0,0,0),rgba(0,0,0,.78));}
+  .wk-tag{position:relative;z-index:1;display:flex;justify-content:flex-end;gap:16px;align-items:baseline;height:var(--peek,56px);padding-top:16px;border-top:1px solid rgba(255,255,255,.28);font-size:11px;letter-spacing:.16em;text-transform:uppercase;text-shadow:0 1px 10px rgba(0,0,0,.7);}
+  .wk-tag span:first-child,.wk-tag span:last-child{color:rgba(255,255,255,.62);}
+  .wk-body{position:absolute;z-index:1;left:20px;right:20px;bottom:11vh;bottom:11svh;max-width:720px;text-shadow:0 1px 14px rgba(0,0,0,.55);}
+  .obx-bgv[data-work="illd"]{filter:brightness(1.35) contrast(1.08);}   /* a dark room: lift it a little */
+  .wk-verdict{min-height:3.6em;margin:0 0 14px;font-size:15px;line-height:1.6;letter-spacing:.03em;color:#fff;opacity:0;transition:opacity .18s ease;}
+  .wk-verdict.on{opacity:1;}
+  .wk-name{margin:0 0 18px;font-family:'Archivo',sans-serif;font-weight:700;font-size:clamp(30px,6.4vw,66px);line-height:.95;letter-spacing:.2em;text-transform:uppercase;color:#eef0f3;}
+  .wk-desc{margin:0;max-width:600px;font-size:13px;line-height:1.75;letter-spacing:.02em;color:rgba(255,255,255,.88);}
+  .wk-link{display:inline-block;margin-top:20px;font-size:13px;letter-spacing:.04em;color:#fff;text-decoration:none;border-bottom:1px solid rgba(255,255,255,.5);padding-bottom:2px;}
+  .wk-credit{margin:16px 0 0;font-size:10px;line-height:1.6;letter-spacing:.04em;color:rgba(255,255,255,.5);}
+  @media (min-width:900px){ .wk{padding:0 40px 0 190px;} .wk-body{left:190px;bottom:13vh;bottom:13svh;} }
 </style>
 </head>
 <body>
@@ -63,8 +72,15 @@
   </div>
 
   <div id="obx-work" style="position:absolute;inset:0;opacity:0;transition:opacity .4s ease;pointer-events:none;background:#000;overflow:hidden;">
-    <video id="obx-video" preload="auto" loop muted playsinline style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);min-width:100%;min-height:100%;width:auto;height:auto;object-fit:cover;">
+    <!-- one background per work, crossfaded by scroll; the picker's clip is local to the beta server -->
+    <video id="obx-video" class="obx-bgv on" data-work="obelisken" preload="auto" loop muted playsinline>
       <source src="obelisken.mp4" type="video/mp4">
+    </video>
+    <video class="obx-bgv" data-work="picker" preload="metadata" loop muted playsinline poster="img/work/picker.jpg">
+      <source src="local/picker-runthrough.mp4" type="video/mp4">
+    </video>
+    <video class="obx-bgv" data-work="illd" data-start="7.5" preload="metadata" loop muted playsinline poster="img/work/illd-vigeland.jpg">
+      <source src="illd.mp4" type="video/mp4">
     </video>
     <canvas id="obx-workcanvas" style="position:absolute;inset:0;width:100%;height:100%;display:block;mix-blend-mode:difference;pointer-events:none;"></canvas>
     <div id="obx-worktext" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:14px;pointer-events:none;font-family:'Martian Mono',monospace;color:#fff;mix-blend-mode:difference;padding-bottom:18vh;">
@@ -74,8 +90,8 @@
   </div>
 
   <div id="obx-contact" style="position:absolute;inset:0;opacity:0;transition:opacity .4s ease;pointer-events:none;background:#000;overflow:hidden;">
-    <video id="obx-video2" preload="auto" loop muted playsinline style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);min-width:100%;min-height:100%;width:auto;height:auto;object-fit:cover;">
-      <source src="illd.mp4" type="video/mp4">
+    <video id="obx-video2" class="obx-bgv on" preload="metadata" loop muted playsinline>
+      <source src="bg/contact.mp4" type="video/mp4">
     </video>
     <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:14px;pointer-events:none;font-family:'Martian Mono',monospace;color:#fff;mix-blend-mode:difference;padding-bottom:18vh;">
       <div style="font-size:11px;letter-spacing:.28em;text-transform:uppercase;color:rgba(255,255,255,.55);">Contact</div>
@@ -83,7 +99,10 @@
     </div>
   </div>
 
-  <div id="obx-cv" style="position:absolute;inset:0;opacity:0;transition:opacity .4s ease;pointer-events:none;background:#000 center/cover no-repeat url(cv-bg.png);overflow:hidden;">
+  <div id="obx-cv" style="position:absolute;inset:0;opacity:0;transition:opacity .4s ease;pointer-events:none;background:#000;overflow:hidden;">
+    <video id="obx-video3" class="obx-bgv on" preload="metadata" loop muted playsinline poster="cv-bg.png">
+      <source src="bg/cv.mp4" type="video/mp4">
+    </video>
     <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:14px;pointer-events:none;font-family:'Martian Mono',monospace;color:#fff;mix-blend-mode:difference;padding-bottom:18vh;">
       <div style="font-size:11px;letter-spacing:.28em;text-transform:uppercase;color:rgba(255,255,255,.55);">CV</div>
       <p style="margin:0;max-width:min(560px,80vw);text-align:center;font-size:clamp(13px,1.5vw,17px);line-height:1.7;letter-spacing:.02em;color:#fff;">Ultrasound Software Engineer, Master of Mathematics, small-stage noise, visualization and realtime reprojection artist</p>
@@ -93,25 +112,25 @@
 </div>
 
 <section id="obx-worklist">
-    <div class="wk-grid">
-      <a class="wk" href="https://vimeo.com/1210239025" target="_blank" rel="noopener">
-        <img src="img/work/obelisken.jpg" alt="A body lit by a depth-coloured projection that follows its shape" width="960" height="540">
-        <div class="wk-head"><span class="wk-year">2026</span><span class="wk-title">Obelisken</span></div>
-        <p class="wk-desc">Realtime reprojection with an Orbbec Femto Bolt and openFrameworks: depth data and attached graphics mapped back onto the body, at about 100 ms photon to photon.</p>
-      </a>
-      <a class="wk" href="playground/picker-run-through.html">
-        <video src="local/picker-runthrough.mp4" poster="img/work/picker.jpg" width="960" height="540" muted loop playsinline autoplay preload="metadata" aria-label="A fashion editor walking a rail of looks, turning them down one after another"></video>
-        <div class="wk-head"><span class="wk-year">2026</span><span class="wk-title">The picker</span></div>
-        <p class="wk-desc">Agents make, a person picks. A chat runs at the speed of typing; the picker runs at the speed of judging: a tap a card, and the picks steer the next round. In the clip: Miranda Priestly's run-through, The Devil Wears Prada (2006).</p>
-      </a>
-      <a class="wk" href="https://vimeo.com/327783057" target="_blank" rel="noopener">
-        <img src="img/work/illd-vigeland.jpg" alt="Illd performing in the dark, a projected screen behind them" width="960" height="540" loading="lazy">
-        <div class="wk-head"><span class="wk-year">2019</span><span class="wk-title">Illd, live at Emanuel Vigeland Museum</span></div>
-        <p class="wk-desc">Realtime visualization, with Øyvind Mellbye (analog electronics) and Bjørnar Steinnes Luteberget (realtime audio synthesis).</p>
-      </a>
+  <article class="wk" data-work="picker">
+    <div class="wk-tag"><span>02</span><span>The picker</span><span>2026</span></div>
+    <div class="wk-body">
+      <p class="wk-verdict" aria-hidden="true"></p>
+      <h2 class="wk-name">The picker</h2>
+      <p class="wk-desc">Agents make, a person picks. A chat runs at the speed of typing; the picker runs at the speed of judging: a tap a card, and the picks steer the next round.</p>
+      <a class="wk-link" href="playground/picker-run-through.html">the run-through &rarr;</a>
+      <p class="wk-credit">In the clip: Miranda Priestly's run-through, The Devil Wears Prada (2006).</p>
     </div>
+  </article>
+  <article class="wk" data-work="illd">
+    <div class="wk-tag"><span>03</span><span>Illd</span><span>2019</span></div>
+    <div class="wk-body">
+      <h2 class="wk-name">Illd</h2>
+      <p class="wk-desc">Live at Emanuel Vigeland Museum. Realtime visualization, with Øyvind Mellbye (analog electronics) and Bjørnar Steinnes Luteberget (realtime audio synthesis).</p>
+      <a class="wk-link" href="https://vimeo.com/327783057" target="_blank" rel="noopener">vimeo.com/327783057 &rarr;</a>
+    </div>
+  </article>
 </section>
-<div id="obx-workshade"></div>
 <nav id="obx-nav" style="position:fixed;top:20px;left:20px;z-index:30;display:flex;flex-direction:column;gap:6px;font-family:'Martian Mono',monospace;color:#fff;mix-blend-mode:difference;opacity:1;transition:opacity .45s ease;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;text-rendering:optimizeLegibility;">
   <a id="obx-home" href="/" style="font-size:14px;font-weight:400;letter-spacing:.10em;text-transform:none;text-decoration:none;color:currentColor;opacity:1;transition:opacity .25s;width:fit-content;padding:10px 0;line-height:1;">Tom Nærland</a>
   <a id="obx-navwork" href="#" style="font-size:14px;font-weight:400;letter-spacing:.14em;text-transform:uppercase;text-decoration:none;color:currentColor;opacity:1;transition:opacity .25s;width:fit-content;padding:10px 0;line-height:1;">Work</a>
@@ -124,7 +143,7 @@
 (function(){
   // ---- element handles ----
   var EL = {};
-  ['wrap','canvas','vig','flare','nav','wm','wmbox','work','video','worklink','workcanvas','worktext','workmore','workshade','worklist','contact','video2','mail','cv',
+  ['wrap','canvas','vig','flare','nav','wm','wmbox','work','video','worklink','workcanvas','worktext','workmore','worklist','contact','video2','video3','mail','cv',
    'home','navwork','navcv','navcontact'].forEach(function(k){ EL[k]=document.getElementById('obx-'+k); });
 
   var FINT=1.15, FSPREAD=1, FSEP=1;                 // flare tuning (sliders removed)
@@ -652,11 +671,10 @@
     var pages={work:EL.work, contact:EL.contact, cv:EL.cv};
     Object.keys(pages).forEach(function(k){ var el=pages[k]; if(!el) return; var on=(k===name);
       el.style.opacity=on?'1':'0'; el.style.pointerEvents=on?'auto':'none'; });
-    if(EL.worklink) EL.worklink.style.pointerEvents=(name==='work')?'auto':'none';
-    workShade();
     if(EL.mail) EL.mail.style.pointerEvents=(name==='contact')?'auto':'none';
-    [[EL.video,'work'],[EL.video2,'contact']].forEach(function(pv){ var v=pv[0]; if(!v) return;
+    [[EL.video2,'contact'],[EL.video3,'cv']].forEach(function(pv){ var v=pv[0]; if(!v) return;
       if(name===pv[1]){ v.play().catch(function(){}); } else if(!v.paused){ v.pause(); } });
+    S.bg=undefined; workScroll();   // force: pick (or rest) the work backgrounds for this page
     if(name==='contact' && !S.mailSet && EL.mail){
       var u=['tom','naerland'].join('.'); var d=['gmail','com'].join('.');
       var addr=u+String.fromCharCode(64)+d;
@@ -683,38 +701,67 @@
   EL.navcv.addEventListener('click', goCV);
   EL.navcontact.addEventListener('click', goContact);
 
-  // ---- Work scrolls: the obelisk is the first screen, the other works follow ----
-  // On a phone the list passes under the nav, so a black band
-  // fades in behind it as the obelisk leaves (CSS hides the band where the list clears the nav).
-  // The obelisk's video rests once the list covers it.
-  // The first card peeks up from under the obelisk, about a fifth of its picture, so the first screen
-  // shows there is more below. The arrow, the link and the caption sit above the peek.
+  // ---- Work scrolls: the obelisk is the first screen, then one screen per work ----
+  // The background is the work whose screen has come up past the middle of the viewport (the obelisk
+  // above the first); it crossfades, only that video plays, and the obelisk's rig, caption and link fade
+  // out while another work is up. The next work's label peeks above the bottom of the first screen.
+  var BGV=[].slice.call(document.querySelectorAll('#obx-work .obx-bgv'));
+  var WORKS=[].slice.call(document.querySelectorAll('#obx-worklist .wk'));
   function workPeek(){
-    var img=EL.worklist && EL.worklist.querySelector('.wk img'); if(!img || !img.offsetHeight) return;
-    S.peek=Math.round((parseFloat(getComputedStyle(EL.worklist).paddingTop)||0) + img.offsetHeight*0.2);
-    document.documentElement.style.setProperty('--peek', S.peek+'px');
+    S.peek=56; document.documentElement.style.setProperty('--peek', S.peek+'px');
   }
   // Portrait: the canvas caption occupies the band above, so the link sits under it.
   function workLayout(){
     var W=EL.wrap.clientWidth||window.innerWidth, H=EL.wrap.clientHeight||window.innerHeight;
-    var narrow=(W/H)<0.9, peek=S.peek||64, base=H*(narrow?0.05:0.18);
+    var narrow=(W/H)<0.9, peek=S.peek||56, base=H*(narrow?0.05:0.18);
     var pb=narrow ? base+peek : Math.max(base, peek+44);
     S.workLift=pb-base;   // the caption block rises with the link
     if(EL.worktext) EL.worktext.style.paddingBottom=pb+'px';
   }
-  function listTop(){ return EL.worklist.getBoundingClientRect().top; }
-  function workCovered(){ return listTop() < EL.wrap.clientHeight*0.05; }
-  function workShade(){
-    var on=(S.page==='work');
-    if(EL.workshade) EL.workshade.style.opacity=String(on ? Math.max(0,Math.min(1,(190-listTop())/100)) : 0);
-    if(on && EL.video && workCovered() && !EL.video.paused) EL.video.pause();   // the loop restarts it once uncovered
+  function activeWork(){
+    var mid=window.innerHeight*0.5, cur='obelisken';
+    WORKS.forEach(function(w){ if(w.getBoundingClientRect().top<=mid) cur=w.getAttribute('data-work'); });
+    return cur;
   }
-  window.addEventListener('scroll', workShade, {passive:true});
-  // The arrow brings the first card up to just under the nav (under its band on a phone).
+  function workScroll(){
+    var name = S.page==='work' ? activeWork() : null;
+    if(name===S.bg) return;
+    S.bg=name;
+    BGV.forEach(function(v){
+      var on=(v.getAttribute('data-work')===name);
+      v.classList.toggle('on', on || (!name && v===EL.video));   // off Work, the obelisk waits underneath
+      if(on){
+        // a work's video may start further in (data-start), past a dark opening; the first time only
+        var st=parseFloat(v.getAttribute('data-start'));
+        if(st && !v._started){ v._started=true;
+          if(v.readyState>=1) v.currentTime=st;
+          else v.addEventListener('loadedmetadata', function(){ v.currentTime=st; }, {once:true}); }
+        v.play().catch(function(){});
+      }
+      else if(!v.paused){ setTimeout(function(){ if(!v.classList.contains('on') || S.page!=='work') v.pause(); }, 950); }
+    });
+    if(EL.work) EL.work.classList.toggle('away', !!name && name!=='obelisken');
+    if(EL.worklink) EL.worklink.style.pointerEvents=(name==='obelisken')?'auto':'none';
+  }
+  window.addEventListener('scroll', workScroll, {passive:true});
+  // The picker's clip carries no captions (cropped to fill a phone they came out huge): its three
+  // verdicts are page text, shown in time with it. Times from the clip's own caption track.
+  var VERDICTS=[[0.51,3.35,"No. And I\u2019ve seen all this before."],[13.02,14.6,"No."],
+                [17.28,20.28,"Why is it so impossible to put together a decent run-through?"]];
+  var PICKV=BGV.filter(function(v){ return v.getAttribute('data-work')==='picker'; })[0];
+  var VERDICT=document.querySelector('#obx-worklist .wk-verdict');
+  function showVerdict(){
+    if(!PICKV || !VERDICT) return;
+    var t=PICKV.currentTime, line='';
+    if(S.bg==='picker' && !PICKV.paused) VERDICTS.forEach(function(v){ if(t>=v[0] && t<v[1]) line=v[2]; });
+    if(line) VERDICT.textContent='\u201c'+line+'\u201d';
+    VERDICT.classList.toggle('on', !!line);
+  }
+
+  // The arrow brings the next work up to fill the screen.
   if(EL.workmore) EL.workmore.addEventListener('click', function(e){ e.preventDefault();
-    var wide=window.matchMedia('(min-width:900px)').matches;
-    var pad=parseFloat(getComputedStyle(EL.worklist).paddingTop)||0;
-    window.scrollTo({top:(window.scrollY||0)+listTop()+pad-(wide?110:200), behavior:'smooth'}); });
+    var w=WORKS[0]; if(!w) return;
+    window.scrollTo({top:(window.scrollY||0)+w.getBoundingClientRect().top, behavior:'smooth'}); });
 
   // ---- routes: "/" is the splash. /work, /cv and /contact are real URLs: GitHub Pages serves
   // work/index.html, cv/index.html and contact/index.html, which bounce to /#page; the router opens
@@ -756,8 +803,9 @@
   (function loop(t){
     try{
       renderCanvas(t);
-      if(S.page==='work' && EL.video && EL.video.paused && !workCovered()){ EL.video.play().catch(function(){}); }
+      if(S.page==='work'){ BGV.forEach(function(v){ if(v.classList.contains('on') && v.paused) v.play().catch(function(){}); }); showVerdict(); }
       else if(S.page==='contact' && EL.video2 && EL.video2.paused){ EL.video2.play().catch(function(){}); }
+      else if(S.page==='cv' && EL.video3 && EL.video3.paused){ EL.video3.play().catch(function(){}); }
     }catch(e){ /* keep running */ }
     requestAnimationFrame(loop);
   })(performance.now());
