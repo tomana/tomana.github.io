@@ -38,8 +38,13 @@
   @keyframes obx-bob{ 0%,100%{transform:translate(-50%,0);} 50%{transform:translate(-50%,5px);} }
   html.obx-scroll{overflow-x:hidden;overflow-y:auto;}
   html.obx-scroll body{overflow:visible;}
-  #obx-work #obx-workcanvas,#obx-work #obx-worktext,#obx-work #obx-workmore{transition:opacity .6s ease;}
-  #obx-work.away #obx-workcanvas,#obx-work.away #obx-worktext,#obx-work.away #obx-workmore{opacity:0;}
+  /* The first screen is the obelisk video alone; the rig drawing comes up with the Obelisken screen in the list
+     (operator, 10-26: "Have the ovelisken graphic on a card in the scrollable work section, just keep the video on the
+     main work page"). The arrow belongs to the first screen. */
+  #obx-work #obx-workcanvas,#obx-work #obx-workmore{transition:opacity .6s ease;}
+  #obx-work #obx-workcanvas{opacity:0;}
+  #obx-work.rig #obx-workcanvas{opacity:1;}
+  #obx-work.away #obx-workmore{opacity:0;pointer-events:none;}
   #obx-worklist{display:none;position:relative;z-index:1;margin-top:calc(100vh - var(--peek,56px));margin-top:calc(100svh - var(--peek,56px));font-family:'Martian Mono',monospace;color:#fff;-webkit-font-smoothing:antialiased;}
   html.obx-scroll #obx-worklist{display:block;}
   .wk{position:relative;display:block;min-height:100vh;min-height:100svh;padding:0 20px;}
@@ -146,9 +151,6 @@
       <source src="illd.mp4" type="video/mp4">
     </video>
     <canvas id="obx-workcanvas" style="position:absolute;inset:0;width:100%;height:100%;display:block;mix-blend-mode:difference;pointer-events:none;"></canvas>
-    <div id="obx-worktext" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:14px;pointer-events:none;font-family:'Martian Mono',monospace;color:#fff;mix-blend-mode:difference;padding-bottom:18vh;">
-      <a id="obx-worklink" href="/work/obelisken/" style="font-size:clamp(18px,2.4vw,30px);letter-spacing:.04em;color:#fff;text-decoration:none;border-bottom:1px solid rgba(255,255,255,.4);padding-bottom:2px;">obelisken &rarr;</a>
-    </div>
     <a id="obx-workmore" href="#obx-worklist" aria-label="More work" style="position:absolute;left:50%;bottom:calc(var(--peek,64px) + 4px);transform:translate(-50%,0);padding:8px 16px;color:#fff;mix-blend-mode:difference;text-decoration:none;font-family:'Martian Mono',monospace;font-size:16px;line-height:1;animation:obx-bob 2.4s ease-in-out infinite;">&#8595;</a>
   </div>
 
@@ -175,6 +177,13 @@
 </div>
 
 <section id="obx-worklist">
+  <article class="wk" data-work="obelisken">
+    <div class="wk-tag"><span>01</span><span>Obelisken</span><span>2026</span></div>
+    <div class="wk-body">
+      <h2 class="wk-name">Obelisken</h2>
+      <a class="wk-link" href="/work/obelisken/">obelisken &rarr;</a>
+    </div>
+  </article>
   <article class="wk" data-work="picker">
     <div class="wk-tag"><span>02</span><span>Picker</span><span>2026</span></div>
     <div class="pk-hold"><div class="pk" aria-hidden="true">
@@ -214,7 +223,7 @@
 (function(){
   // ---- element handles ----
   var EL = {};
-  ['wrap','canvas','vig','flare','nav','wm','wmbox','work','video','worklink','workcanvas','worktext','workmore','worklist','contact','video2','video3','mail','cv',
+  ['wrap','canvas','vig','flare','nav','wm','wmbox','work','video','workcanvas','workmore','worklist','contact','video2','video3','mail','cv',
    'home','navwork','navcv','navcontact'].forEach(function(k){ EL[k]=document.getElementById('obx-'+k); });
 
   var FINT=1.15, FSPREAD=1, FSEP=1;                 // flare tuning (sliders removed)
@@ -449,10 +458,6 @@
              ambient:0.36, key:0.42, rim:0.25, edge:0.38, converge:0.25 };
   var LENS_DEPTH=[-0.05,5.62,0.255];   // upper head: the depth camera's lens rim
   var LENS_PROJ =[-0.10,5.02,0.355];   // lower head: the projector's lens rim
-  var CAPTION=['REALTIME PROCESSING WITH',
-               'CAMERA-PROJECTOR INTRINSICS,',
-               'MAPPING DEPTH DATA AND ATTACHED',
-               'GRAPHICS BACK INTO WORLD SPACE'];
   function renderOverlay(){
     var cv=EL.workcanvas, ctx=A.octx; if(!cv||!ctx) return;
     var W=cv.width,H=cv.height; ctx.clearRect(0,0,W,H);
@@ -545,20 +550,6 @@
     text('DEPTH IN',  labX, pDepth[1]-fs*0.7, 'right', narrow?.85:.66);
     text('LIGHT OUT', labX, pProj[1] +fs*0.7, 'right', narrow?.85:.66);
 
-    // One block: OBELISKEN / REPROJECTION heads the explanation and travels with it. Landscape sets
-    // it under the rig against the same gutter; a portrait viewport has no room beside the rig, so
-    // the block centres in the band above the link instead.
-    // The block is anchored from its BOTTOM: its last line lands on the baseline the old "WORK"
-    // label used to sit on, just above the link, so the two read as one column. Everything above
-    // (the two title lines) stacks upward from there.
-    var tfs=fs*1.45;
-    var bx    = narrow ? W*0.5   : W-M;
-    var align = narrow ? 'center': 'right';
-    var capY  = H*(narrow?0.879:0.753) - (S.workLift||0)*DPR - (CAPTION.length-1)*fs*1.85;
-    var by    = capY - fs*2.3 - tfs*1.35;
-    text('OBELISKEN',    bx, by,          align, .92, tfs, 0.18);
-    text('REPROJECTION:', bx, by+tfs*1.35, align, .92, tfs, 0.18);
-    CAPTION.forEach(function(line,i){ text(line, bx, capY+i*fs*1.85, align, narrow?.8:.5); });
   }
 
   // ---- the splash: the obelisk (and the IVAR / CHEOPS / KALLAX flip before it) on the main canvas ----
@@ -719,7 +710,7 @@
     var W=w.clientWidth||window.innerWidth, H=w.clientHeight||window.innerHeight;
     cv.width=Math.round(W*DPR); cv.height=Math.round(H*DPR);
     if(EL.canvas){ EL.canvas.width=cv.width; EL.canvas.height=cv.height; A._blank=false; }
-    if(S.page==='work'){ workPeek(); workLayout(); renderOverlay(); }   // sizing the canvas clears it
+    if(S.page==='work'){ workPeek(); renderOverlay(); }   // sizing the canvas clears it
   }
 
   // ---- pages ----
@@ -738,7 +729,7 @@
     S.page=name;
     A._blank=false;   // let the splash canvas settle into (or out of) its idle state
     setNav(name);
-    if(name==='work'){ workPeek(); workLayout(); renderOverlay(); }
+    if(name==='work'){ workPeek(); renderOverlay(); }
     var pages={work:EL.work, contact:EL.contact, cv:EL.cv};
     Object.keys(pages).forEach(function(k){ var el=pages[k]; if(!el) return; var on=(k===name);
       el.style.opacity=on?'1':'0'; el.style.pointerEvents=on?'auto':'none'; });
@@ -781,16 +772,8 @@
   function workPeek(){
     S.peek=56; document.documentElement.style.setProperty('--peek', S.peek+'px');
   }
-  // Portrait: the canvas caption occupies the band above, so the link sits under it.
-  function workLayout(){
-    var W=EL.wrap.clientWidth||window.innerWidth, H=EL.wrap.clientHeight||window.innerHeight;
-    var narrow=(W/H)<0.9, peek=S.peek||56, base=H*(narrow?0.05:0.18);
-    var pb=narrow ? base+peek : Math.max(base, peek+44);
-    S.workLift=pb-base;   // the caption block rises with the link
-    if(EL.worktext) EL.worktext.style.paddingBottom=pb+'px';
-  }
   function activeWork(){
-    var mid=window.innerHeight*0.5, cur='obelisken';
+    var mid=window.innerHeight*0.5, cur='hero';
     WORKS.forEach(function(w){ if(w.getBoundingClientRect().top<=mid) cur=w.getAttribute('data-work'); });
     return cur;
   }
@@ -798,8 +781,9 @@
     var name = S.page==='work' ? activeWork() : null;
     if(name===S.bg) return;
     S.bg=name;
+    var video = name==='hero' ? 'obelisken' : name;   // the first screen is the obelisk's video
     BGV.forEach(function(v){
-      var on=(v.getAttribute('data-work')===name);
+      var on=(v.getAttribute('data-work')===video);
       v.classList.toggle('on', on || (!name && v===EL.video));   // off Work, the obelisk waits underneath
       if(on){
         // a work's video may start further in (data-start), past a dark opening; the first time only
@@ -811,8 +795,7 @@
       }
       else if(!v.paused){ setTimeout(function(){ if(!v.classList.contains('on') || S.page!=='work') v.pause(); }, 950); }
     });
-    if(EL.work) EL.work.classList.toggle('away', !!name && name!=='obelisken');
-    if(EL.worklink) EL.worklink.style.pointerEvents=(name==='obelisken')?'auto':'none';
+    if(EL.work){ EL.work.classList.toggle('away', !!name && name!=='hero'); EL.work.classList.toggle('rig', name==='obelisken'); }
   }
   window.addEventListener('scroll', workScroll, {passive:true});
 
