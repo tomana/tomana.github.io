@@ -64,35 +64,36 @@
   .pk{position:absolute;z-index:1;top:84px;left:50%;width:300px;--pks:1;transform-origin:50% 0;
     transform:translate(-50%,calc((1 - var(--pkp,1)) * 70px)) scale(calc(var(--pks) * (.92 + .08 * var(--pkp,1))));
     opacity:var(--pkp,1);pointer-events:none;font-family:'Martian Mono',monospace;color:#fff;}
-  .pk-win{background:rgba(22,22,22,.88);border:1px solid rgba(255,255,255,.22);border-radius:6px;padding:8px;box-shadow:0 18px 50px rgba(0,0,0,.55);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);}
+  .pk-win{background:rgba(22,22,22,.88);border:1px solid rgba(255,255,255,.22);padding:8px;box-shadow:0 18px 50px rgba(0,0,0,.55);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);}
   .pk-use{display:flex;gap:5px;margin-bottom:8px;}
-  .pk-ubox{flex:1 1 0;min-width:0;display:grid;grid-template-rows:11px 11px;gap:3px;padding:3px;background:#0d0d0d;border-radius:2px;}
+  .pk-ubox{flex:1 1 0;min-width:0;display:grid;grid-template-rows:11px 11px;gap:3px;padding:3px;background:#0d0d0d;}
   .pk-kbar{position:relative;overflow:hidden;background:#262626;}
   .pk-kline{position:absolute;inset:0;display:flex;justify-content:space-between;align-items:center;padding:0 3px;white-space:nowrap;font-size:7px;line-height:1;color:#d8d8d8;}
   .pk-kfill{position:absolute;left:0;top:0;bottom:0;overflow:hidden;transition:width .6s ease;}
   .pk-kfill .pk-kline{right:auto;color:#111;}
-  .pk-gear{flex:0 0 28px;display:flex;align-items:center;justify-content:center;background:#242424;border-radius:4px;font-size:12px;color:rgba(255,255,255,.7);}
+  .pk-gear{flex:0 0 28px;display:flex;align-items:center;justify-content:center;background:#242424;font-size:12px;color:rgba(255,255,255,.7);}
   .pk-top{display:flex;gap:12px;align-items:baseline;font-size:10px;letter-spacing:.02em;color:rgba(255,255,255,.5);padding:2px 2px 7px;border-bottom:1px solid rgba(255,255,255,.12);}
   .pk-top .on{color:#fff;border-bottom:1px solid #fff;padding-bottom:3px;}
   .pk-top .pk-dots{margin-left:auto;}
-  .pk-auto{display:flex;gap:8px;align-items:center;margin:7px 0;padding:5px 7px;font-size:9px;letter-spacing:.14em;border:1px solid rgba(255,255,255,.14);border-radius:3px;color:rgba(255,255,255,.75);}
+  .pk-auto{display:flex;gap:8px;align-items:center;margin:7px 0;padding:5px 7px;font-size:9px;letter-spacing:.14em;border:1px solid rgba(255,255,255,.14);color:rgba(255,255,255,.75);}
   .pk-auto i{font-style:normal;color:#9be38f;}
   .pk-auto .pk-q{margin-left:auto;letter-spacing:.06em;color:rgba(255,255,255,.45);}
   .pk-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;}
-  /* Stacks as the picker draws them (static/app/style.css .cardwrap/.fan): the slot reserves room at the bottom-right
+  /* No rounded corners anywhere in the mock (operator, 10-26: "Dont use rounding in the picker mock").
+     Stacks as the picker draws them (static/app/style.css .cardwrap/.fan): the slot reserves room at the bottom-right
      and each older version is an outline 3 px further down and right; ‹ › sit on the picture's bottom corners, ‹ lit
      when there are older versions, › dim on the newest. A vote is "+1" in the + cell, not a frame round the card. */
   .pk-slot{position:relative;padding:0 9px 9px 0;}
-  .pk-fan{position:absolute;border:1px solid #777;border-radius:3px;background:#242424;opacity:0;transition:opacity .3s;}
+  .pk-fan{position:absolute;border:1px solid #777;background:#242424;opacity:0;transition:opacity .3s;}
   .pk-fan.f1{left:3px;top:3px;right:6px;bottom:6px;} .pk-fan.f2{left:6px;top:6px;right:3px;bottom:3px;} .pk-fan.f3{left:9px;top:9px;right:0;bottom:0;}
   .pk-arr{position:absolute;bottom:18px;width:22%;aspect-ratio:1;display:none;align-items:center;justify-content:center;background:rgba(40,40,40,.32);color:rgba(255,255,255,.9);font-size:10px;line-height:1;}
   .pk-arr.l{left:1px;} .pk-arr.r{right:1px;color:rgba(255,255,255,.25);}
   .pk-card.stk .pk-arr{display:flex;}
-  .pk-card{position:relative;z-index:1;border:1px solid #3a3a3a;border-radius:3px;background:#262626;overflow:hidden;transition:transform .28s cubic-bezier(.3,1.6,.5,1),opacity .25s,box-shadow .25s;}
-  .pk-card .pk-th{display:block;width:100%;height:auto;aspect-ratio:1;border-radius:2px 2px 0 0;}
+  .pk-card{position:relative;z-index:1;border:1px solid #3a3a3a;background:#262626;overflow:hidden;transition:transform .28s cubic-bezier(.3,1.6,.5,1),opacity .25s,box-shadow .25s;}
+  .pk-card .pk-th{display:block;width:100%;height:auto;aspect-ratio:1;}
   .pk-card .pk-bar{display:flex;align-items:center;height:17px;font-size:9px;color:rgba(255,255,255,.75);}
   .pk-card .pk-bar span{flex:1;min-width:0;padding-left:4px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;}
-  .pk-card .pk-bar i.cp{flex:0 0 auto;position:relative;width:5px;height:5px;margin:0 4px 0 2px;border:1px solid rgba(255,255,255,.55);border-radius:1px;}
+  .pk-card .pk-bar i.cp{flex:0 0 auto;position:relative;width:5px;height:5px;margin:0 4px 0 2px;border:1px solid rgba(255,255,255,.55);}
   .pk-card .pk-bar i.cp::before{content:'';position:absolute;left:-3px;top:-3px;width:5px;height:5px;border-left:1px solid rgba(255,255,255,.55);border-top:1px solid rgba(255,255,255,.55);}
   .pk-card .pk-bar em.v{color:#d6efd0;background:rgba(120,220,110,.10);box-shadow:inset 0 0 0 1px rgba(120,220,110,.32);}
   .pk-card .pk-bar em{flex:0 0 17px;width:17px;font-size:10px;height:17px;line-height:17px;text-align:center;font-style:normal;border-left:1px solid #3a3a3a;transition:background .15s;}
