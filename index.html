@@ -36,8 +36,8 @@
   #obx-worklist{display:none;position:relative;z-index:1;margin-top:calc(100vh - var(--peek,64px));margin-top:calc(100svh - var(--peek,64px));background:#000;border-top:1px solid rgba(255,255,255,.16);padding:18px 20px 64px;font-family:'Martian Mono',monospace;color:#fff;-webkit-font-smoothing:antialiased;}
   .wk-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,400px),1fr));gap:44px 28px;max-width:1100px;margin:0 auto;}
   .wk{display:block;color:#fff;text-decoration:none;}
-  .wk img{display:block;width:100%;height:auto;aspect-ratio:16/9;object-fit:cover;background:#111;transition:opacity .25s;}
-  .wk:hover img{opacity:.8;}
+  .wk img,.wk video{display:block;width:100%;height:auto;aspect-ratio:16/9;object-fit:cover;background:#111;transition:opacity .25s;}
+  .wk:hover img,.wk:hover video{opacity:.8;}
   .wk-head{display:flex;gap:14px;align-items:baseline;margin-top:14px;}
   .wk-year{font-size:11px;letter-spacing:.1em;color:rgba(255,255,255,.5);}
   .wk-title{font-size:13px;letter-spacing:.12em;text-transform:uppercase;line-height:1.5;}
@@ -99,25 +99,15 @@
         <div class="wk-head"><span class="wk-year">2026</span><span class="wk-title">Obelisken</span></div>
         <p class="wk-desc">Realtime reprojection with an Orbbec Femto Bolt and openFrameworks: depth data and attached graphics mapped back onto the body, at about 100 ms photon to photon.</p>
       </a>
-      <a class="wk" href="https://vimeo.com/1219772256" target="_blank" rel="noopener">
-        <img src="img/work/stargate.jpg" alt="Stargate" width="960" height="540" loading="lazy">
-        <div class="wk-head"><span class="wk-year">2026</span><span class="wk-title">Stargate</span></div>
-        <p class="wk-desc">Realtime visuals for a projected show. openFrameworks and GLSL.</p>
+      <a class="wk" href="playground/picker-run-through.html">
+        <video src="local/picker-runthrough.mp4" poster="img/work/picker.jpg" width="960" height="540" muted loop playsinline autoplay preload="metadata" aria-label="A fashion editor walking a rail of looks, turning them down one after another"></video>
+        <div class="wk-head"><span class="wk-year">2026</span><span class="wk-title">The picker</span></div>
+        <p class="wk-desc">Agents make, a person picks. A chat runs at the speed of typing; the picker runs at the speed of judging: a tap a card, and the picks steer the next round. In the clip: Miranda Priestly's run-through, The Devil Wears Prada (2006).</p>
       </a>
       <a class="wk" href="https://vimeo.com/327783057" target="_blank" rel="noopener">
         <img src="img/work/illd-vigeland.jpg" alt="Illd performing in the dark, a projected screen behind them" width="960" height="540" loading="lazy">
         <div class="wk-head"><span class="wk-year">2019</span><span class="wk-title">Illd, live at Emanuel Vigeland Museum</span></div>
         <p class="wk-desc">Realtime visualization, with Øyvind Mellbye (analog electronics) and Bjørnar Steinnes Luteberget (realtime audio synthesis).</p>
-      </a>
-      <a class="wk" href="https://vimeo.com/100060997" target="_blank" rel="noopener">
-        <img src="img/work/volumetric-skull.jpg" alt="A slice of a skull projected onto a moving surface" width="960" height="540" loading="lazy">
-        <div class="wk-head"><span class="wk-year">2014</span><span class="wk-title">Volumetric data navigated by moving surface</span></div>
-        <p class="wk-desc">A depth camera and a projector turn a moving surface into a window into a skull dataset. With Bjørnar Steinnes Luteberget.</p>
-      </a>
-      <a class="wk" href="https://vimeo.com/148372991" target="_blank" rel="noopener">
-        <img src="img/work/overlapping-meshes.jpg" alt="A fish-shaped mesh overlapping a triangular grid" width="960" height="512" loading="lazy">
-        <div class="wk-head"><span class="wk-year">2014</span><span class="wk-title">Overlapping meshes</span></div>
-        <p class="wk-desc">Finite element computations on overlapping meshes, with a fish shape traced from video. C++, openFrameworks, FEniCS.</p>
       </a>
     </div>
 </section>
