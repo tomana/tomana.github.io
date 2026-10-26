@@ -55,6 +55,54 @@
   .wk-link{display:inline-block;margin-top:20px;font-size:13px;letter-spacing:.04em;color:#fff;text-decoration:none;border-bottom:1px solid rgba(255,255,255,.5);padding-bottom:2px;}
   .wk-credit{margin:16px 0 0;font-size:10px;line-height:1.6;letter-spacing:.04em;color:rgba(255,255,255,.5);}
   @media (min-width:900px){ .wk{padding:0 40px 0 190px;} .wk-body{left:190px;bottom:13vh;bottom:13svh;} }
+  /* The picker screen's drawing, as the obelisk screen has its rig: a small live picker, made up (no real
+     cards), in HTML, centred over the clip. On top the agents' usage boxes (the picker's two thick bars a
+     box, session and week, the text knocked out of the fill); then the tabs, AUTO and a grid where some
+     cards are stacks of versions. Cards arrive, a tap keeps or drops them, a keep grows a new version on its
+     stack. It slides up into place as the screen comes up (--pkp, 0..1, set on scroll); a phone scales it
+     down (--pks). */
+  .pk{position:absolute;z-index:1;top:180px;left:50%;width:300px;--pks:.55;transform-origin:50% 0;
+    transform:translate(-50%,calc((1 - var(--pkp,1)) * 70px)) scale(calc(var(--pks) * (.92 + .08 * var(--pkp,1))));
+    opacity:var(--pkp,1);pointer-events:none;font-family:'Martian Mono',monospace;color:#fff;}
+  .pk-win{background:rgba(22,22,22,.88);border:1px solid rgba(255,255,255,.22);border-radius:6px;padding:8px;box-shadow:0 18px 50px rgba(0,0,0,.55);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);}
+  .pk-use{display:flex;gap:5px;margin-bottom:8px;}
+  .pk-ubox{flex:1 1 0;min-width:0;display:grid;grid-template-rows:11px 11px;gap:3px;padding:3px;background:#0d0d0d;border-radius:2px;}
+  .pk-kbar{position:relative;overflow:hidden;background:#262626;}
+  .pk-kline{position:absolute;inset:0;display:flex;justify-content:space-between;align-items:center;padding:0 3px;white-space:nowrap;font-size:7px;line-height:1;color:#d8d8d8;}
+  .pk-kfill{position:absolute;left:0;top:0;bottom:0;overflow:hidden;transition:width .6s ease;}
+  .pk-kfill .pk-kline{right:auto;color:#111;}
+  .pk-gear{flex:0 0 28px;display:flex;align-items:center;justify-content:center;background:#242424;border-radius:4px;font-size:12px;color:rgba(255,255,255,.7);}
+  .pk-top{display:flex;gap:12px;align-items:baseline;font-size:10px;letter-spacing:.02em;color:rgba(255,255,255,.5);padding:2px 2px 7px;border-bottom:1px solid rgba(255,255,255,.12);}
+  .pk-top .on{color:#fff;border-bottom:1px solid #fff;padding-bottom:3px;}
+  .pk-top .pk-dots{margin-left:auto;}
+  .pk-auto{display:flex;gap:8px;align-items:center;margin:7px 0;padding:5px 7px;font-size:9px;letter-spacing:.14em;border:1px solid rgba(255,255,255,.14);border-radius:3px;color:rgba(255,255,255,.75);}
+  .pk-auto i{font-style:normal;color:#9be38f;}
+  .pk-auto .pk-q{margin-left:auto;letter-spacing:.06em;color:rgba(255,255,255,.45);}
+  .pk-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px;}
+  .pk-slot{position:relative;padding:0 6px 6px 0;}   /* room for a stack's fan, as the picker reserves it */
+  .pk-fan{position:absolute;border:1px solid #777;border-radius:2px;background:#1e1e1e;transition:opacity .3s;}
+  .pk-fan.f1{left:3px;top:3px;right:3px;bottom:3px;} .pk-fan.f2{left:6px;top:6px;right:0;bottom:0;}
+  .pk-card{position:relative;z-index:1;border:1px solid #3a3a3a;border-radius:2px;background:#1e1e1e;transition:transform .28s cubic-bezier(.3,1.6,.5,1),opacity .25s,box-shadow .25s;}
+  .pk-card .pk-th{display:block;aspect-ratio:1;border-radius:2px 2px 0 0;}
+  .pk-card .pk-bar{display:flex;align-items:center;height:15px;font-size:8px;color:rgba(255,255,255,.75);}
+  .pk-card .pk-bar span{flex:1;min-width:0;padding-left:4px;overflow:hidden;white-space:nowrap;text-overflow:clip;}
+  .pk-card .pk-bar b{font-weight:400;color:#9be38f;padding-right:3px;}
+  .pk-card .pk-bar em{flex:0 0 15px;width:15px;height:15px;line-height:15px;text-align:center;font-style:normal;border-left:1px solid #3a3a3a;transition:background .15s;}
+  .pk-card.out{opacity:0;transform:scale(.7) rotate(-8deg);}
+  .pk-card.new{opacity:0;transform:translateY(-14px) scale(.8);}
+  .pk-card.ver{transform:translate(-3px,-3px);}
+  .pk-card.kept{box-shadow:0 0 0 2px rgba(255,255,255,.85);}
+  .pk-card .pk-bar em.hit-m{background:rgba(255,255,255,.3);} .pk-card .pk-bar em.hit-p{background:rgba(120,220,110,.6);}
+  .pk-foot{display:flex;justify-content:space-between;margin-top:7px;font-size:8px;letter-spacing:.08em;color:rgba(255,255,255,.45);}
+  .pk-cur{position:absolute;z-index:2;left:150px;top:200px;width:14px;height:14px;margin:-7px 0 0 -7px;border-radius:50%;background:rgba(255,255,255,.9);box-shadow:0 0 0 4px rgba(255,255,255,.25);transition:left .32s ease,top .32s ease,transform .12s;}
+  .pk-cur.tap{transform:scale(.6);}
+  .pk-lab{position:absolute;font-size:calc(10px / var(--pks));letter-spacing:.12em;white-space:nowrap;color:rgba(255,255,255,.78);text-shadow:0 1px 8px rgba(0,0,0,.8);transition:color .2s;}
+  .pk-lab::after{content:'';position:absolute;top:50%;width:12px;border-top:1px dashed rgba(255,255,255,.55);}
+  .pk-lab.l1,.pk-lab.l3{right:calc(100% + 16px);} .pk-lab.l1::after,.pk-lab.l3::after{left:calc(100% + 3px);}
+  .pk-lab.l2{left:calc(100% + 16px);} .pk-lab.l2::after{right:calc(100% + 3px);}
+  .pk-lab.l3{top:12px;} .pk-lab.l1{top:150px;} .pk-lab.l2{top:250px;}
+  .pk-lab.ping{color:#fff;}
+  @media (min-width:900px){ .pk{top:84px;--pks:.92;} }
 </style>
 </head>
 <body>
@@ -114,6 +162,19 @@
 <section id="obx-worklist">
   <article class="wk" data-work="picker">
     <div class="wk-tag"><span>02</span><span>The picker</span><span>2026</span></div>
+    <div class="pk" aria-hidden="true">
+      <div class="pk-win">
+        <div class="pk-use"><div class="pk-ubox"></div><div class="pk-ubox"></div><div class="pk-ubox"></div><div class="pk-gear">&#9881;</div></div>
+        <div class="pk-top"><span class="on">visuals_picked</span><span>music_hybrid</span><span class="pk-dots">&middot;&middot;&middot;</span></div>
+        <div class="pk-auto">&#9656; AUTO <i>ON</i><span class="pk-q">queue &middot; 2</span></div>
+        <div class="pk-grid"></div>
+        <div class="pk-foot"><span class="pk-n">0 judged</span><span>0 words typed</span></div>
+      </div>
+      <div class="pk-cur"></div>
+      <span class="pk-lab l3">THEIR TIME</span>
+      <span class="pk-lab l1">AGENTS MAKE</span>
+      <span class="pk-lab l2">YOU PICK</span>
+    </div>
     <div class="wk-body">
       <p class="wk-verdict" aria-hidden="true"></p>
       <h2 class="wk-name">The picker</h2>
@@ -809,6 +870,108 @@
     }catch(e){ /* keep running */ }
     requestAnimationFrame(loop);
   })(performance.now());
+})();
+</script>
+<script>
+"use strict";
+/* The picker screen's live mock (.pk): twelve made-up cards, judged by a made-up taste (warm, hard-edged).
+   A tap drops a card or keeps it. A dropped card's place gets a new one, mostly grown from a keep; a kept card
+   gets a new version on its stack (a revise), so the grid drifts toward the taste, the picker's point. Every
+   card the agents make costs a little of their session, in the usage boxes. Runs only while its screen shows. */
+(function(){
+  var root=document.querySelector('.pk'); if(!root) return;
+  var sec=root.parentNode, grid=root.querySelector('.pk-grid'), cur=root.querySelector('.pk-cur'),
+      cnt=root.querySelector('.pk-n'), queue=root.querySelector('.pk-q'),
+      labMake=root.querySelector('.l1'), labPick=root.querySelector('.l2'), labTime=root.querySelector('.l3'),
+      uboxes=[].slice.call(root.querySelectorAll('.pk-ubox'));
+  var seed=(Date.now()%2147483646)+1, id=0, judged=0, keeps=[], busy=false;
+  function rnd(){ seed=seed*16807%2147483647; return (seed-1)/2147483646; }
+  function hd(a,b){ var d=Math.abs(((a-b)%360+360)%360); return d>180?360-d:d; }
+  function gene(){ return {id:++id,v:1,k:rnd()*4|0,h1:rnd()*360,h2:rnd()*360,s:40+rnd()*50,f:3+rnd()*7,a:rnd()*180,x:20+rnd()*60,y:20+rnd()*60}; }
+  function child(p,sameCard){ var g={}; for(var k in p) g[k]=p[k];
+    if(sameCard) g.v=Math.min(9,p.v+1); else { g.id=++id; g.v=1; }
+    g.h1+=(rnd()-.5)*40; g.h2+=(rnd()-.5)*36; g.f=Math.max(2.5,Math.min(11,g.f*(.75+rnd()*.5)));
+    g.a+=(rnd()-.5)*50; g.x=Math.max(10,Math.min(90,g.x+(rnd()-.5)*30)); g.y=Math.max(10,Math.min(90,g.y+(rnd()-.5)*30));
+    if(rnd()<.08) g.k=rnd()*4|0; return g; }
+  function taste(g){ return .62*(1-Math.min(1,hd(g.h2,28)/85)) + (g.k<2?.2:0) + (g.s>60?.1:0) + rnd()*.12; }
+  function col(h,s,l){ return 'hsl('+Math.round(h)+','+Math.round(s)+'%,'+l+'%)'; }
+  function paint(g){
+    var d=col(g.h1,g.s,14), l=col(g.h2,g.s,60), f=g.f.toFixed(1), f2=(2*g.f).toFixed(1);
+    if(g.k===0) return 'repeating-linear-gradient('+Math.round(g.a)+'deg,'+d+' 0 '+f+'px,'+l+' '+f+'px '+f2+'px)';
+    if(g.k===1) return 'repeating-radial-gradient(circle at '+Math.round(g.x)+'% '+Math.round(g.y)+'%,'+d+' 0 '+f+'px,'+l+' '+f+'px '+f2+'px)';
+    if(g.k===2) return 'radial-gradient(circle at '+Math.round(g.x)+'% '+Math.round(g.y)+'%,'+l+' 0 24%,transparent 25%),radial-gradient(circle at '+Math.round(100-g.y)+'% '+Math.round(g.x)+'%,'+l+' 0 15%,transparent 16%),'+d;
+    return 'repeating-conic-gradient(from '+Math.round(g.a)+'deg at '+Math.round(g.x)+'% '+Math.round(g.y)+'%,'+d+' 0 '+(g.f*3).toFixed(0)+'deg,'+l+' '+(g.f*3).toFixed(0)+'deg '+(g.f*6).toFixed(0)+'deg)';
+  }
+
+  // ---- the usage boxes: one an agent, the session over the week, the text knocked out of the fill ----
+  var AGENTS=[{s:41,w:22,c:'#d97757',cw:'#a4553a',r:'3h'},{s:18,w:57,c:'#5fc08f',cw:'#3a8a62',r:'1h'},{s:66,w:35,c:'#7aa2ff',cw:'#4c6fc6',r:'4h'}];
+  function kbar(pct,color,left,right){
+    var line=function(extra){ return '<div class="pk-kline"'+extra+'><span>'+left+'</span><span>'+right+'</span></div>'; };
+    return '<div class="pk-kbar">'+line('')+'<div class="pk-kfill" style="transition:none;width:'+pct.toFixed(0)+'%;background:'+color+'">'+
+           line(' style="width:'+(10000/Math.max(pct,0.5)).toFixed(0)+'%"')+'</div></div>';
+  }
+  function paintUsage(){ AGENTS.forEach(function(a,i){
+    uboxes[i].innerHTML=kbar(a.s,a.c,'s:'+Math.round(a.s)+'%',a.r)+kbar(a.w,a.cw,'w:'+Math.round(a.w)+'%','4d'); }); }
+  function spend(){ var a=AGENTS[rnd()*3|0]; a.s+=2+rnd()*3; a.w+=.4+rnd()*.6;
+    if(a.s>97){ a.s=2; a.r='5h'; } if(a.w>97) a.w=5; paintUsage(); }
+  paintUsage();
+
+  // ---- the grid: each card in a slot with room for its stack's fan ----
+  function show(slot,g){ var card=slot.card; card.g=g;
+    card.querySelector('.pk-th').style.background=paint(g);
+    card.querySelector('span').textContent='v'+g.id+(g.v>1?'.'+g.v:'');
+    slot.fans[0].style.opacity=g.v>1?1:0; slot.fans[1].style.opacity=g.v>2?1:0; }
+  var slots=[];
+  for(var i=0;i<12;i++){
+    var slot=document.createElement('div'); slot.className='pk-slot';
+    slot.innerHTML='<div class="pk-fan f2"></div><div class="pk-fan f1"></div><div class="pk-card"><i class="pk-th"></i><div class="pk-bar"><span></span><b></b><em>&minus;</em><em>+</em></div></div>';
+    slot.card=slot.querySelector('.pk-card'); slot.fans=[slot.querySelector('.f1'),slot.querySelector('.f2')];
+    var g=gene(); if(rnd()<.4) g.v=2+(rnd()*2|0);   // some start as stacks
+    show(slot,g); grid.appendChild(slot); slots.push(slot);
+  }
+  function ping(lab){ lab.classList.add('ping'); setTimeout(function(){ lab.classList.remove('ping'); },500); }
+  function arrive(slot,g){   // agents make: a new card pops in where one left
+    var card=slot.card; card.classList.remove('out','kept'); card.classList.add('new'); show(slot,g);
+    void card.offsetWidth; card.classList.remove('new');
+    ping(labMake); queue.textContent='queue · '+(1+(rnd()*3|0)); spend(); ping(labTime);
+  }
+  function revise(slot){     // a keep grows a new version on its own stack
+    var card=slot.card; card.classList.remove('kept'); card.querySelector('b').textContent='';
+    card.classList.add('ver'); show(slot, child(card.g,true)); spend(); ping(labTime);
+    setTimeout(function(){ card.classList.remove('ver'); }, 260);
+  }
+  function inView(){ var r=sec.getBoundingClientRect(); return r.bottom>0 && r.top<window.innerHeight; }
+  function step(){
+    if(busy || !inView()) return;
+    var free=slots.filter(function(sl){ var c=sl.card.classList; return !c.contains('out') && !c.contains('kept'); });
+    if(!free.length) return;
+    var slot=free[rnd()*free.length|0], card=slot.card, keep=taste(card.g)>.66, em=card.querySelectorAll('em')[keep?1:0];
+    busy=true;
+    cur.style.left=(slot.offsetLeft+card.offsetLeft+em.offsetLeft+em.offsetWidth/2)+'px';
+    cur.style.top=(slot.offsetTop+card.offsetTop+em.offsetTop+em.offsetHeight/2)+'px';
+    setTimeout(function(){   // you pick: a tap
+      cur.classList.add('tap'); em.classList.add(keep?'hit-p':'hit-m'); ping(labPick);
+      judged++; cnt.textContent=judged+' judged';
+      setTimeout(function(){
+        cur.classList.remove('tap'); em.classList.remove('hit-p','hit-m'); busy=false;
+        if(keep){
+          card.classList.add('kept'); card.querySelector('b').textContent='+1';
+          keeps.push(card.g); if(keeps.length>4) keeps.shift();
+          setTimeout(function(){ revise(slot); }, 1600);
+        } else {
+          card.classList.add('out');
+          setTimeout(function(){ arrive(slot, keeps.length && rnd()<.8 ? child(keeps[rnd()*keeps.length|0]) : gene()); }, 280);
+        }
+      }, 160);
+    }, 360);
+  }
+  // it slides up into place as its screen comes up
+  function scrollIn(){
+    var r=sec.getBoundingClientRect(), H=window.innerHeight;
+    root.style.setProperty('--pkp', Math.max(0,Math.min(1,(H-r.top)/(H*0.75))).toFixed(3));
+  }
+  window.addEventListener('scroll', scrollIn, {passive:true}); window.addEventListener('resize', scrollIn); scrollIn();
+  if(!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches)) setInterval(step, 720);
 })();
 </script>
 </body>
