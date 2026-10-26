@@ -177,9 +177,9 @@
   </div>
 
   <div id="obx-cv" style="position:absolute;inset:0;opacity:0;transition:opacity .4s ease;pointer-events:none;background:#000;overflow:hidden;">
-    <video id="obx-video3" class="obx-bgv on" preload="metadata" loop muted playsinline poster="cv-bg.png">
-      <source src="bg/cv.mp4" type="video/mp4">
-    </video>
+    <!-- the ultrasound image placed as on the published page (centred, covering), edge to edge; it tilts a little with
+         the phone (or the mouse) instead of drifting as a video, where it was hard to see what it is (operator, 10-26) -->
+    <div id="obx-cvimg" style="position:fixed;top:0;left:0;width:100%;height:100vh;height:100lvh;background:#000 center/cover no-repeat url(cv-bg.png);transform:scale(1.1);will-change:transform;"></div>
     <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:14px;pointer-events:none;font-family:'Martian Mono',monospace;color:#fff;mix-blend-mode:difference;padding-bottom:18vh;">
       <div style="font-size:11px;letter-spacing:.28em;text-transform:uppercase;color:rgba(255,255,255,.55);">CV</div>
       <p style="margin:0;max-width:min(560px,80vw);text-align:center;font-size:clamp(13px,1.5vw,17px);line-height:1.7;letter-spacing:.02em;color:#fff;">Ultrasound Software Engineer, Master of Mathematics, small-stage noise, visualization and realtime reprojection artist</p>
@@ -236,7 +236,7 @@
 (function(){
   // ---- element handles ----
   var EL = {};
-  ['wrap','canvas','vig','flare','nav','wm','wmbox','work','video','workcanvas','workbloom','workmore','worklist','contact','video2','video3','mail','cv',
+  ['wrap','canvas','vig','flare','nav','wm','wmbox','work','video','workcanvas','workbloom','workmore','worklist','contact','video2','cvimg','mail','cv',
    'home','navwork','navcv','navcontact'].forEach(function(k){ EL[k]=document.getElementById('obx-'+k); });
 
   var FINT=1.15, FSPREAD=1, FSEP=1;                 // flare tuning (sliders removed)
@@ -703,7 +703,7 @@
     Object.keys(pages).forEach(function(k){ var el=pages[k]; if(!el) return; var on=(k===name);
       el.style.opacity=on?'1':'0'; el.style.pointerEvents=on?'auto':'none'; });
     if(EL.mail) EL.mail.style.pointerEvents=(name==='contact')?'auto':'none';
-    [[EL.video2,'contact'],[EL.video3,'cv']].forEach(function(pv){ var v=pv[0]; if(!v) return;
+    [[EL.video2,'contact']].forEach(function(pv){ var v=pv[0]; if(!v) return;
       if(name===pv[1]){ v.play().catch(function(){}); } else if(!v.paused){ v.pause(); } });
     S.bg=undefined; workScroll(); rigScroll();   // force: pick (or rest) the work backgrounds for this page
     if(name==='contact' && !S.mailSet && EL.mail){
@@ -813,6 +813,33 @@
   function applyRoute(){ var r=routeFromLocation(); S._routing=true; try{ (ROUTES[r]||goHome)(); } finally{ S._routing=false; } }
   window.addEventListener('popstate', applyRoute);
 
+  // ---- CV: the image tilts a little with the phone ----
+  // Device orientation, measured against a slowly following rest position, so it answers a turn of the hand and settles
+  // back while the phone is held still at any angle; at most 6 degrees, eased. No gyroscope (a computer): the mouse.
+  // iOS asks permission, on the first tap.
+  var TILT={x:0,y:0,tx:0,ty:0,b0:null,g0:null,gyro:false};
+  window.addEventListener('deviceorientation', function(e){
+    if(e.beta==null || e.gamma==null) return;
+    TILT.gyro=true;
+    if(TILT.b0==null){ TILT.b0=e.beta; TILT.g0=e.gamma; }
+    TILT.b0+=(e.beta-TILT.b0)*0.02; TILT.g0+=(e.gamma-TILT.g0)*0.02;
+    TILT.tx=Math.max(-6,Math.min(6,(e.beta-TILT.b0)*0.5)); TILT.ty=Math.max(-6,Math.min(6,(e.gamma-TILT.g0)*0.5));
+  }, true);
+  window.addEventListener('mousemove', function(e){
+    if(TILT.gyro) return;
+    TILT.tx=(0.5-e.clientY/window.innerHeight)*6; TILT.ty=(e.clientX/window.innerWidth-0.5)*6;
+  }, {passive:true});
+  document.addEventListener('click', function ask(){
+    var D=window.DeviceOrientationEvent;
+    if(D && typeof D.requestPermission==='function') D.requestPermission().catch(function(){});
+    document.removeEventListener('click', ask);
+  });
+  function cvTilt(){
+    if(!EL.cvimg) return;
+    TILT.x+=(TILT.tx-TILT.x)*0.08; TILT.y+=(TILT.ty-TILT.y)*0.08;
+    EL.cvimg.style.transform='perspective(900px) rotateX('+TILT.x.toFixed(2)+'deg) rotateY('+TILT.y.toFixed(2)+'deg) scale(1.1)';
+  }
+
   // ---- boot ----
   A.faces = buildScene();
   A.shelfFaces = buildShelf();
@@ -835,7 +862,7 @@
       renderCanvas(t);
       if(S.page==='work'){ BGV.forEach(function(v){ if(v.classList.contains('on') && v.paused) v.play().catch(function(){}); }); }
       else if(S.page==='contact' && EL.video2 && EL.video2.paused){ EL.video2.play().catch(function(){}); }
-      else if(S.page==='cv' && EL.video3 && EL.video3.paused){ EL.video3.play().catch(function(){}); }
+      if(S.page==='cv') cvTilt();
     }catch(e){ /* keep running */ }
     requestAnimationFrame(loop);
   })(performance.now());
