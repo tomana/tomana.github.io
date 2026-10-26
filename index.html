@@ -168,7 +168,7 @@
 
   <div id="obx-contact" style="position:absolute;inset:0;opacity:0;transition:opacity .4s ease;pointer-events:none;background:#000;overflow:hidden;">
     <video id="obx-video2" class="obx-bgv on" preload="metadata" loop muted playsinline>
-      <source src="bg/contact.mp4" type="video/mp4">
+      <source src="bg/contact.mp4?v=2" type="video/mp4">
     </video>
     <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:14px;pointer-events:none;font-family:'Martian Mono',monospace;color:#fff;mix-blend-mode:difference;padding-bottom:18vh;">
       <div style="font-size:11px;letter-spacing:.28em;text-transform:uppercase;color:rgba(255,255,255,.55);">Contact</div>
@@ -177,9 +177,10 @@
   </div>
 
   <div id="obx-cv" style="position:absolute;inset:0;opacity:0;transition:opacity .4s ease;pointer-events:none;background:#000;overflow:hidden;">
-    <!-- the ultrasound image placed as on the published page (centred, covering), edge to edge; it tilts a little with
-         the phone (or the mouse) instead of drifting as a video, where it was hard to see what it is (operator, 10-26) -->
-    <div id="obx-cvimg" style="position:fixed;top:0;left:0;width:100%;height:100vh;height:100lvh;background:#000 center/cover no-repeat url(cv-bg.png);transform:scale(1.1);will-change:transform;"></div>
+    <!-- the ultrasound image, whole, as big as the screen allows, its edges faded into the black (operator, 10-26: "Can i
+         show more of the baby face?": covering the screen cut the face's sides on a phone, top and bottom on a computer);
+         it tilts a little with the phone (or the mouse) -->
+    <div id="obx-cvimg" style="position:fixed;top:50%;left:50%;width:min(108vw,88.4vh);width:min(108vw,88.4svh);aspect-ratio:375/441;background:center/cover no-repeat url(cv-bg.png);-webkit-mask-image:radial-gradient(closest-side,#000 64%,transparent 100%);mask-image:radial-gradient(closest-side,#000 64%,transparent 100%);transform:translate(-50%,-50%);will-change:transform;"></div>
     <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:14px;pointer-events:none;font-family:'Martian Mono',monospace;color:#fff;mix-blend-mode:difference;padding-bottom:18vh;">
       <div style="font-size:11px;letter-spacing:.28em;text-transform:uppercase;color:rgba(255,255,255,.55);">CV</div>
       <p style="margin:0;max-width:min(560px,80vw);text-align:center;font-size:clamp(13px,1.5vw,17px);line-height:1.7;letter-spacing:.02em;color:#fff;">Ultrasound Software Engineer, Master of Mathematics, small-stage noise, visualization and realtime reprojection artist</p>
@@ -837,7 +838,7 @@
   function cvTilt(){
     if(!EL.cvimg) return;
     TILT.x+=(TILT.tx-TILT.x)*0.08; TILT.y+=(TILT.ty-TILT.y)*0.08;
-    EL.cvimg.style.transform='perspective(900px) rotateX('+TILT.x.toFixed(2)+'deg) rotateY('+TILT.y.toFixed(2)+'deg) scale(1.1)';
+    EL.cvimg.style.transform='translate(-50%,-50%) perspective(900px) rotateX('+TILT.x.toFixed(2)+'deg) rotateY('+TILT.y.toFixed(2)+'deg)';
   }
 
   // ---- boot ----
