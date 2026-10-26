@@ -54,17 +54,17 @@
   .wk::after{content:'';position:absolute;left:0;right:0;bottom:0;height:75%;pointer-events:none;background:linear-gradient(rgba(0,0,0,0),rgba(0,0,0,.78));}
   .wk-tag{position:relative;z-index:1;display:flex;justify-content:flex-end;gap:16px;align-items:baseline;height:var(--peek,56px);padding-top:16px;border-top:1px solid rgba(255,255,255,.28);font-size:11px;letter-spacing:.16em;text-transform:uppercase;text-shadow:0 1px 10px rgba(0,0,0,.7);}
   .wk-tag span:first-child,.wk-tag span:last-child{color:rgba(255,255,255,.62);}
-  .wk-body{position:absolute;z-index:1;left:20px;right:20px;bottom:11vh;bottom:11svh;max-width:720px;text-shadow:0 1px 14px rgba(0,0,0,.55);}
+  .wk-body{position:absolute;z-index:1;left:20px;right:20px;bottom:11vh;bottom:11svh;text-shadow:0 1px 14px rgba(0,0,0,.55);}
   .obx-bgv[data-work="illd"]{filter:brightness(1.35) contrast(1.08);}   /* a dark room: lift it a little */
-  .wk-name{margin:0 0 18px;font-family:'Archivo',sans-serif;font-weight:700;font-size:clamp(30px,6.4vw,66px);line-height:.95;letter-spacing:.2em;text-transform:uppercase;color:#eef0f3;}
+  .wk-name{margin:0 0 18px;font-family:'Archivo',sans-serif;font-weight:700;font-size:clamp(30px,6.4vw,66px);line-height:.95;letter-spacing:.2em;text-indent:.2em;text-transform:uppercase;color:#eef0f3;}   /* the indent balances the spacing after the last letter, as OBELISKEN's on the splash */
   .wk-desc{margin:0;max-width:600px;font-size:13px;line-height:1.75;letter-spacing:.02em;color:rgba(255,255,255,.88);}
-  /* the title is the link, straight out to the work's own place (operator, 10-26: "the work sections only go to
-     external sites for now, no internal pages, i want a very very slim and graphical thing"); a small arrow up-right */
-  a.wk-name{display:inline-block;text-decoration:none;}
-  .wk-ext{display:inline-block;margin-left:.28em;font-size:.42em;letter-spacing:0;vertical-align:.95em;transform:rotate(-45deg);opacity:.75;transition:opacity .2s;}
-  a.wk-name:hover .wk-ext{opacity:1;}
+  /* Each screen: its title, centred, and the full address it goes to under it; Obelisken has none for now (operator,
+     10-26: "I want the full link to show under picker and illd as before, obelisken has no link, and i want the titles to
+     be centered"). External sites only, no pages of our own. */
+  .wk-body{text-align:center;}
+  .wk-link{display:inline-block;font-size:13px;letter-spacing:.04em;color:#fff;text-decoration:none;border-bottom:1px solid rgba(255,255,255,.5);padding-bottom:2px;}
   
-  @media (min-width:900px){ .wk{padding:0 40px 0 190px;} .wk-body{left:190px;bottom:13vh;bottom:13svh;} }
+  @media (min-width:900px){ .wk{padding:0 40px;} .wk-body{left:40px;right:40px;bottom:13vh;bottom:13svh;} }
   /* The picker screen's drawing, as the obelisk screen has its rig: a small live picker, made up (no real
      cards), in HTML, centred over the clip. On top the agents' usage boxes (the picker's two thick bars a
      box, session and week, the text knocked out of the fill); then the tabs, AUTO and a grid where some
@@ -188,7 +188,7 @@
   <article class="wk" data-work="obelisken">
     <div class="wk-tag"><span>01</span><span>Obelisken</span><span>2026</span></div>
     <div class="wk-body">
-      <a class="wk-name" href="https://vimeo.com/1210239025" target="_blank" rel="noopener">Obelisken<span class="wk-ext" aria-hidden="true">&rarr;</span></a>
+      <h2 class="wk-name">Obelisken</h2>
     </div>
   </article>
   <article class="wk" data-work="picker">
@@ -206,13 +206,15 @@
       <span class="pk-lab l2">YOU PICK</span>
     </div></div>
     <div class="wk-body">
-      <a class="wk-name" href="https://github.com/tomana/picker" target="_blank" rel="noopener">Picker<span class="wk-ext" aria-hidden="true">&rarr;</span></a>
+      <h2 class="wk-name">Picker</h2>
+      <a class="wk-link" href="https://github.com/tomana/picker" target="_blank" rel="noopener">github.com/tomana/picker &rarr;</a>
     </div>
   </article>
   <article class="wk" data-work="illd">
     <div class="wk-tag"><span>03</span><span>Illd</span><span>2019</span></div>
     <div class="wk-body">
-      <a class="wk-name" href="https://vimeo.com/327783057" target="_blank" rel="noopener">Illd<span class="wk-ext" aria-hidden="true">&rarr;</span></a>
+      <h2 class="wk-name">Illd</h2>
+      <a class="wk-link" href="https://vimeo.com/327783057" target="_blank" rel="noopener">vimeo.com/327783057 &rarr;</a>
     </div>
   </article>
 </section>
