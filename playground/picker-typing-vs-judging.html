@@ -1,0 +1,355 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Picker 2 — typing vs judging</title>
+<link rel="preload" href="../fonts/MartianMono.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="../fonts/Archivo.woff2" as="font" type="font/woff2" crossorigin>
+<style>
+  @font-face{font-family:'Martian Mono';font-style:normal;font-weight:400;font-display:swap;src:url('../fonts/MartianMono.woff2') format('woff2');}
+  @font-face{font-family:'Archivo';font-style:normal;font-weight:700;font-display:swap;src:url('../fonts/Archivo.woff2') format('woff2');}
+  html,body{margin:0;background:#000;color:#fff;}
+  body{font-family:'Martian Mono',monospace;-webkit-font-smoothing:antialiased;}
+  .top{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:14px 16px 0;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.5);}
+  .top a{color:inherit;text-decoration:none;}
+  #stage{display:block;width:100%;height:calc(100vh - 150px);height:calc(100svh - 150px);min-height:520px;touch-action:manipulation;-webkit-tap-highlight-color:transparent;user-select:none;}
+  .cap{max-width:1100px;margin:0 auto;padding:8px 16px 0;}
+  .wk-head{display:flex;gap:14px;align-items:baseline;}
+  .wk-year{font-size:11px;letter-spacing:.1em;color:rgba(255,255,255,.5);}
+  .wk-title{font-size:13px;letter-spacing:.12em;text-transform:uppercase;line-height:1.5;}
+  .wk-desc{margin:8px 0 0;font-size:12px;line-height:1.7;letter-spacing:.02em;color:rgba(255,255,255,.66);max-width:640px;}
+  .note{margin:18px 0 0;font-size:11px;line-height:1.7;letter-spacing:.04em;color:rgba(255,255,255,.42);max-width:640px;}
+  .sk{display:flex;gap:10px 18px;flex-wrap:wrap;max-width:1100px;margin:0 auto;padding:22px 16px 56px;font-size:11px;letter-spacing:.1em;text-transform:uppercase;}
+  .sk a{color:rgba(255,255,255,.45);text-decoration:none;} .sk a.on{color:#fff;}
+  @media (min-width:900px){ .top{padding:22px 40px 0;} #stage{height:min(calc(100svh - 170px),680px);} .cap,.sk{padding-left:40px;padding-right:40px;} }
+</style>
+</head>
+<body>
+<div class="top"><a href="./">&larr; playground</a><span>sketch 2 / 4</span></div>
+<canvas id="stage"></canvas>
+<div class="cap">
+  <div class="wk-head"><span class="wk-year">2026</span><span class="wk-title">The picker</span></div>
+  <p class="wk-desc">Agents make, a person picks. A chat runs at the speed of typing; the picker runs at the speed of judging: a tap a card, and the picks steer the next round.</p>
+  <p class="note">Sketch 2 of 4, typing vs judging: The same person for the same minute: on one side typing a brief to an agent, on the other judging a grid with taps. Count the directions given. All the cards are drawn here, made up; none come from a real picker.</p>
+</div>
+<nav class="sk"><a href="picker-run-through.html">1 the run-through</a><a href="picker-typing-vs-judging.html" class=on>2 typing vs judging</a><a href="picker-board.html">3 the board</a><a href="picker-lineage.html">4 the lineage</a></nav>
+<script>
+/* Drawn picker cards. A card is a gene (a seed's worth of numbers) drawn as a small generated picture in the picker's
+   card shape: the picture, then a bar with its name, − and +. Nothing here comes from a real picker; every card is
+   made up on the spot. The same code is in each picker-*.html sketch, so each page stands alone. */
+var PK = (function () {
+  function rng(seed) {
+    var s = (seed | 0) || 0x2545f491;
+    var r = function () { s ^= s << 13; s ^= s >>> 17; s ^= s << 5; return (s >>> 0) / 4294967296; };
+    r(); r(); r(); return r;
+  }
+  function clamp(v, a, b) { return v < a ? a : v > b ? b : v; }
+  function lerp(a, b, t) { return a + (b - a) * t; }
+  function ease(t) { t = clamp(t, 0, 1); return 1 - Math.pow(1 - t, 3); }
+  function easeIn(t) { t = clamp(t, 0, 1); return t * t * t; }
+  function easeIO(t) { t = clamp(t, 0, 1); return t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2; }
+  function hsl(h, s, l) {
+    h = ((h % 360) + 360) % 360 / 360;
+    var q = l < .5 ? l * (1 + s) : l + s - l * s, p = 2 * l - q;
+    function f(t) { if (t < 0) t += 1; if (t > 1) t -= 1;
+      return t < 1 / 6 ? p + (q - p) * 6 * t : t < .5 ? q : t < 2 / 3 ? p + (q - p) * (2 / 3 - t) * 6 : p; }
+    return [f(h + 1 / 3) * 255, f(h) * 255, f(h - 1 / 3) * 255];
+  }
+  function hueDist(a, b) { var d = Math.abs((((a - b) % 360) + 360) % 360); return d > 180 ? 360 - d : d; }
+
+  // genes: k = the kind of picture, h1/h2 = dark and light hue, s = saturation, c = contrast, f = frequency,
+  // a = angle, cx/cy = a centre, ring = the picker fixture's circle, w = warp
+  var nextId = 0;
+  function gene(r) {
+    return { id: ++nextId, k: (r() * 6) | 0, h1: r() * 360, h2: r() * 360, s: .3 + r() * .65, c: .25 + r() * .75,
+      f: 1.5 + r() * 8, a: r() * Math.PI, cx: (r() - .5) * .8, cy: (r() - .5) * .8, ring: r() < .4, w: r() * 1.6,
+      gen: 0, parent: 0 };
+  }
+  function child(p, r, amt) {
+    amt = amt == null ? 1 : amt;
+    var d = function (x) { return (r() - .5) * x * amt; };
+    return { id: ++nextId, k: r() < .06 * amt ? (r() * 6) | 0 : p.k, h1: p.h1 + d(50), h2: p.h2 + d(40),
+      s: clamp(p.s + d(.25), .15, 1), c: clamp(p.c + d(.3), .1, 1), f: clamp(p.f * (1 + d(.6)), 1.2, 12),
+      a: p.a + d(.9), cx: clamp(p.cx + d(.4), -.6, .6), cy: clamp(p.cy + d(.4), -.6, .6),
+      ring: r() < .12 * amt ? !p.ring : p.ring, w: clamp(p.w + d(.8), 0, 2.4), gen: p.gen + 1, parent: p.id };
+  }
+
+  function value(g, x, y) {
+    var P = Math.PI, v, i, m;
+    switch (g.k) {
+      case 0: v = Math.sin((x * Math.cos(g.a) + y * Math.sin(g.a)) * g.f * P + g.w * Math.sin(y * 3)); break;
+      case 1: v = Math.sin(Math.hypot(x - g.cx, y - g.cy) * g.f * P * 1.3); break;
+      case 2: v = (Math.sin(x * g.f * 2) + Math.sin(y * g.f * 2.6 + g.a * 3) + Math.sin((x + y) * g.f * 1.4)) / 3 * 1.6; break;
+      case 3: v = Math.sin(Math.hypot(x - g.cx, y - g.cy) * g.f * P) * Math.sin(Math.hypot(x + g.cx, y + g.cy) * g.f * P) * 1.4; break;
+      case 4: v = Math.sin(x * g.f * P + g.w * 2.5 * Math.sin(y * g.f * .8 * P + g.a)); break;
+      default:
+        for (m = 0, i = 0; i < 3; i++) {
+          var bx = Math.sin(g.a * 3 + i * 2.1) * .55, by = Math.cos(g.a * 2 + i * 1.7) * .55;
+          m += .12 / ((x - bx) * (x - bx) + (y - by) * (y - by) + .02);
+        }
+        v = Math.sin(m * g.f * .25);
+    }
+    return clamp(.5 + .5 * v * (.5 + g.c * 1.4), 0, 1);
+  }
+  var N = 72, cache = new Map();
+  function thumb(g) {
+    var c = cache.get(g.id); if (c) return c;
+    c = document.createElement('canvas'); c.width = c.height = N;
+    var x = c.getContext('2d'), im = x.createImageData(N, N), d = im.data, r = rng(g.id * 7919 + 13);
+    var a = hsl(g.h1, g.s, .07 + .13 * (1 - g.c)), b = hsl(g.h2, g.s, .5 + .2 * g.s);
+    for (var j = 0; j < N; j++) for (var i = 0; i < N; i++) {
+      var t = value(g, i / N * 2 - 1, j / N * 2 - 1), o = (j * N + i) * 4, n = (r() - .5) * 10;
+      d[o] = a[0] + (b[0] - a[0]) * t + n; d[o + 1] = a[1] + (b[1] - a[1]) * t + n; d[o + 2] = a[2] + (b[2] - a[2]) * t + n; d[o + 3] = 255;
+    }
+    x.putImageData(im, 0, 0);
+    if (g.ring) {
+      x.strokeStyle = 'rgba(' + (b[0] * .6 + 100 | 0) + ',' + (b[1] * .6 + 100 | 0) + ',' + (b[2] * .6 + 100 | 0) + ',.85)';
+      x.lineWidth = 2; x.beginPath(); x.arc(N / 2 + g.cx * N * .3, N / 2 + g.cy * N * .3, N * .17, 0, 7); x.stroke();
+    }
+    cache.set(g.id, c);
+    if (cache.size > 800) cache.delete(cache.keys().next().value);
+    return c;
+  }
+
+  // the picker's card: the picture, then a bar with the name, − and + (o.minus / o.plus light them, 0..1)
+  function card(ctx, g, x, y, w, o) {
+    o = o || {};
+    var bar = o.bar !== false && w >= 44, bh = bar ? Math.round(w * .2) : 0, bw = Math.max(16, w * .17);
+    ctx.save();
+    ctx.globalAlpha *= o.alpha == null ? 1 : o.alpha;
+    if (o.rot) { ctx.translate(x + w / 2, y + (w + bh) / 2); ctx.rotate(o.rot); ctx.translate(-x - w / 2, -y - (w + bh) / 2); }
+    if (o.shadow) { ctx.shadowColor = 'rgba(0,0,0,.6)'; ctx.shadowBlur = o.shadow; ctx.shadowOffsetY = o.shadow * .3; }
+    ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
+    ctx.drawImage(thumb(g), x, y, w, w);
+    ctx.shadowColor = 'transparent';
+    if (bar) {
+      ctx.fillStyle = '#242424'; ctx.fillRect(x, y + w, w, bh);
+      ctx.strokeStyle = '#3a3a3a'; ctx.lineWidth = 1; ctx.strokeRect(x + .5, y + .5, w - 1, w + bh - 1);
+      var fs = Math.max(8, Math.round(bh * .42));
+      ctx.font = fs + "px 'Martian Mono',monospace"; ctx.textBaseline = 'middle'; ctx.textAlign = 'left';
+      ctx.fillStyle = 'rgba(255,255,255,.82)'; ctx.fillText(o.label || ('v' + g.id), x + bh * .35, y + w + bh / 2 + 1);
+      var by = y + w + bh / 2, k = Math.max(3, bh * .16);
+      [[x + w - bw * 2, o.minus, 0], [x + w - bw, o.plus, 1]].forEach(function (b) {
+        ctx.strokeStyle = '#3a3a3a'; ctx.beginPath(); ctx.moveTo(b[0] + .5, y + w); ctx.lineTo(b[0] + .5, y + w + bh); ctx.stroke();
+        if (b[1]) { ctx.fillStyle = b[2] ? 'rgba(120,220,110,' + b[1] * .55 + ')' : 'rgba(255,255,255,' + b[1] * .28 + ')'; ctx.fillRect(b[0] + 1, y + w + 1, bw - 1, bh - 2); }
+        var cx = b[0] + bw / 2;
+        ctx.strokeStyle = 'rgba(255,255,255,.72)'; ctx.lineWidth = Math.max(1, bh * .06); ctx.beginPath();
+        ctx.moveTo(cx - k, by); ctx.lineTo(cx + k, by); if (b[2]) { ctx.moveTo(cx, by - k); ctx.lineTo(cx, by + k); } ctx.stroke();
+      });
+    }
+    if (o.outline) { ctx.strokeStyle = 'rgba(255,255,255,' + o.outline + ')'; ctx.lineWidth = 2; ctx.strokeRect(x - 3, y - 3, w + 6, w + bh + 6); }
+    ctx.restore();
+    return w + bh;
+  }
+  // where a card's − and + are, for taps
+  function buttons(x, y, w) {
+    var bh = Math.round(w * .2), bw = Math.max(16, w * .17);
+    return { minus: [x + w - bw * 2, y + w, bw, bh], plus: [x + w - bw, y + w, bw, bh] };
+  }
+  function inside(p, b, pad) { pad = pad || 0; return p[0] >= b[0] - pad && p[0] <= b[0] + b[2] + pad && p[1] >= b[1] - pad && p[1] <= b[1] + b[3] + pad; }
+
+  // the judge's taste (made up): warm amber on near-black, high contrast, stripes and rings
+  function taste(g) {
+    return .5 * (1 - Math.min(1, hueDist(g.h2, 28) / 80)) + .22 * g.c + .16 * (g.k === 0 || g.k === 1 || g.k === 3 ? 1 : 0) + .12 * (g.s > .55 ? 1 : 0);
+  }
+  function near(a, b) { return a.k === b.k && hueDist(a.h2, b.h2) < 18 && Math.abs(a.f - b.f) < 1.5; }
+  var LINES = ['no.', 'next.', 'mm. no.', 'busy.', 'again?', 'not this season.', 'no. no.', 'pass.'];
+  // a short dry line for a card that's out (nothing for a keep)
+  function line(g, r, seen) {
+    if (seen && r() < .7) return "we've seen it.";
+    if (g.s < .42) return r() < .5 ? 'beige.' : 'tired.';
+    if (g.c < .35) return 'flat.';
+    if (hueDist(g.h2, 28) > 110) return r() < .5 ? 'too cold.' : 'no.';
+    return LINES[(r() * LINES.length) | 0];
+  }
+
+  function stage(cv, draw) {
+    var ctx = cv.getContext('2d'), W = 0, H = 0, DPR = 1, last = 0;
+    function fit() {
+      DPR = Math.min(2, window.devicePixelRatio || 1); W = cv.clientWidth; H = cv.clientHeight;
+      cv.width = Math.round(W * DPR); cv.height = Math.round(H * DPR);
+    }
+    fit(); addEventListener('resize', fit);
+    function loop(t) {
+      var dt = Math.min(.05, (t - (last || t)) / 1000); last = t;
+      if (cv.clientWidth !== W || cv.clientHeight !== H) fit();
+      ctx.setTransform(DPR, 0, 0, DPR, 0, 0); ctx.clearRect(0, 0, W, H);
+      draw(ctx, W, H, dt);
+      requestAnimationFrame(loop);
+    }
+    requestAnimationFrame(loop);
+  }
+  function pointer(cv, fn) {
+    cv.addEventListener('pointerdown', function (e) { var r = cv.getBoundingClientRect(); fn([e.clientX - r.left, e.clientY - r.top]); });
+  }
+  function text(ctx, s, x, y, o) {
+    o = o || {};
+    ctx.font = (o.size || 11) + 'px ' + (o.font || "'Martian Mono',monospace");
+    ctx.fillStyle = o.color || 'rgba(255,255,255,.5)'; ctx.textAlign = o.align || 'left'; ctx.textBaseline = o.base || 'alphabetic';
+    if ('letterSpacing' in ctx) ctx.letterSpacing = (o.ls == null ? .12 : o.ls) + 'em';
+    ctx.fillText(s, x, y);
+    if ('letterSpacing' in ctx) ctx.letterSpacing = '0px';
+  }
+  function wrap(ctx, s, maxW) {
+    var out = [], cur = '';
+    s.split(' ').forEach(function (w) { var t = cur ? cur + ' ' + w : w; if (ctx.measureText(t).width > maxW && cur) { out.push(cur); cur = w; } else cur = t; });
+    out.push(cur); return out;
+  }
+  function clock(t) { var s = Math.floor(t); return Math.floor(s / 60) + ':' + ('0' + s % 60).slice(-2); }
+  function shuffle(a, r) { for (var i = a.length - 1; i > 0; i--) { var j = (r() * (i + 1)) | 0, t = a[i]; a[i] = a[j]; a[j] = t; } return a; }
+
+  return { rng: rng, clamp: clamp, lerp: lerp, ease: ease, easeIn: easeIn, easeIO: easeIO, hueDist: hueDist,
+    gene: gene, child: child, thumb: thumb, card: card, buttons: buttons, inside: inside, taste: taste, near: near,
+    line: line, stage: stage, pointer: pointer, text: text, wrap: wrap, clock: clock, shuffle: shuffle };
+})();
+</script>
+<script>
+/* Sketch 2, typing vs judging: one clock, two ways to steer the same agents. Top (or left): a brief typed into a chat
+   at a real typing speed, with the pauses and the typos, then the wait for the one card it buys. Bottom (or right): a
+   grid judged with taps, each − replaced, each + growing a child of itself. The counters count directions given. */
+(function () {
+  var cv = document.getElementById('stage'), R = PK.rng(Date.now() & 0xffffff), S, L;
+  var MINUTE = 60;
+  var BRIEFS = [
+    "ok the stripes work, but thinner and warmer, more orange than red. slow the drift down, maybe half speed? and lose the ring",
+    "closer. take the one from before but darker in the dark parts, more contrast",
+    "no, too far. go back a step and keep that angle",
+  ];
+
+  function reset() {
+    S = { t: 0, end: 0, fade: 0,
+      chat: { log: [], buf: '', b: 0, i: 0, wait: 1.2, typo: null, state: 'type', n: 0, last: PK.gene(R) },
+      grid: { cells: [], next: .9, n: 0, kept: 0, taps: [], pool: [] } };
+  }
+  function layout(W, H) {
+    var wide = W > H * 1.1, l = { wide: wide }, g = wide ? 36 : 14;
+    if (wide) { l.a = [16, 40, W / 2 - 16 - g, H - 70]; l.b = [W / 2 + g, 40, W / 2 - 16 - g, H - 70]; }
+    else { var h = Math.round((H - 98) * .42); l.a = [16, 40, W - 32, h]; l.b = [16, 40 + h + 34, W - 32, H - 98 - h - 34]; }
+    var b = l.b, cols = wide ? 4 : 4, rows = 3, gap = wide ? 14 : 8;
+    var cw = Math.floor(Math.min((b[2] - gap * (cols - 1)) / cols, (b[3] - 22 - gap * (rows - 1)) / rows / 1.2));
+    l.cols = cols; l.rows = rows; l.gap = gap; l.cw = cw;
+    l.gx = b[0] + (b[2] - (cw * cols + gap * (cols - 1))) / 2; l.gy = b[1] + 22;
+    return l;
+  }
+  function cellXY(k) { var c = k % L.cols, r = Math.floor(k / L.cols); return [L.gx + c * (L.cw + L.gap), L.gy + r * (L.cw * 1.2 + L.gap)]; }
+
+  // the chat side: one key at a time, ~6 a second, slower at commas, a typo now and then
+  function typeStep(dt) {
+    var c = S.chat; c.wait -= dt; if (c.wait > 0) return;
+    var brief = BRIEFS[c.b % BRIEFS.length];
+    if (c.state === 'type') {
+      if (c.typo === 'back') { c.buf = c.buf.slice(0, -1); c.typo = null; c.wait = .14; return; }
+      if (c.i >= brief.length) { c.state = 'send'; c.wait = .7; return; }
+      var ch = brief[c.i];
+      if (ch !== ' ' && R() < .035 && !c.typo) { c.buf += String.fromCharCode(97 + (R() * 26 | 0)); c.typo = 'back'; c.wait = .35 + R() * .25; return; }
+      c.buf += ch; c.i++;
+      c.wait = 1 / 6.2 * (.6 + R() * .9) + (ch === ',' || ch === '.' || ch === '?' ? .5 + R() * .7 : ch === ' ' ? R() * .12 : 0) + (R() < .02 ? 1 + R() : 0);
+    } else if (c.state === 'send') {
+      c.log.push({ who: 'me', s: c.buf }); c.buf = ''; c.i = 0; c.b++; c.n++;
+      c.log.push({ who: 'agent', s: 'working', t: 0 }); c.state = 'wait'; c.wait = 7 + R() * 3;
+    } else if (c.state === 'wait') {
+      var reply = c.log[c.log.length - 1]; c.last = PK.child(c.last, R, .8); reply.g = c.last; reply.s = '';
+      c.state = 'type'; c.wait = 1.4 + R();
+    }
+  }
+  // the grid side: a tap every half second or so
+  function judgeStep(dt) {
+    var G = S.grid, n = L.cols * L.rows, k;
+    while (G.cells.length < n) G.cells.push({ g: PK.gene(R), st: 'in', t: 0 });
+    G.cells.forEach(function (c) {
+      c.t += dt;
+      if (c.st === 'in' && c.t > .3) c.st = 'idle';
+      if (c.st === 'out' && c.t > .28) { c.g = G.pool.length && R() < .75 ? PK.child(G.pool[(R() * G.pool.length) | 0], R, .7) : PK.gene(R); c.st = 'in'; c.t = 0; }
+      if (c.st === 'kept' && c.t > 1.1) { c.g = PK.child(c.g, R, .5); c.st = 'in'; c.t = 0; }
+    });
+    G.taps = G.taps.filter(function (p) { p.t += dt; return p.t < .4; });
+    G.next -= dt; if (G.next > 0) return;
+    G.next = .35 + R() * .45;
+    var idle = []; for (k = 0; k < n; k++) if (G.cells[k].st === 'idle') idle.push(k);
+    if (!idle.length) return;
+    k = idle[(R() * idle.length) | 0];
+    var c = G.cells[k], keep = PK.taste(c.g) > .6 - Math.min(.1, G.n * .002), xy = cellXY(k), b = PK.buttons(xy[0], xy[1], L.cw)[keep ? 'plus' : 'minus'];
+    c.st = keep ? 'kept' : 'out'; c.t = 0; G.n++;
+    if (keep) { G.kept++; G.pool.push(c.g); if (G.pool.length > 6) G.pool.shift(); }
+    G.taps.push({ x: b[0] + b[2] / 2, y: b[1] + b[3] / 2, t: 0 });
+  }
+
+  function draw(ctx, W, H, dt) {
+    if (!S) reset();
+    L = layout(W, H);
+    var running = S.t < MINUTE;
+    if (running) { S.t += dt; typeStep(dt); judgeStep(dt); }
+    else { S.end += dt; if (S.end > 5) reset(); }
+    S.fade = Math.min(1, S.fade + dt * 2);
+    ctx.globalAlpha = S.fade * (S.end > 4.4 ? Math.max(0, 1 - (S.end - 4.4) / .6) : 1);
+
+    PK.text(ctx, PK.clock(S.t) + ' / 1:00', W / 2, 22, { align: 'center' });
+
+    // the chat panel
+    var a = L.a, C = S.chat;
+    PK.text(ctx, 'TYPING', a[0], a[1] + 4, { color: 'rgba(255,255,255,.75)' });
+    PK.text(ctx, C.n + (C.n === 1 ? ' direction' : ' directions'), a[0] + a[2], a[1] + 4, { align: 'right', color: 'rgba(255,255,255,.75)' });
+    ctx.save(); ctx.beginPath(); ctx.rect(a[0], a[1] + 14, a[2], a[3] - 14); ctx.clip();
+    ctx.font = "12px 'Martian Mono',monospace";
+    var boxW = a[2] - 24, lines = PK.wrap(ctx, C.buf, boxW), shown = lines.slice(-4), boxH = 20 + shown.length * 18;
+    var by = a[1] + a[3] - boxH;
+    ctx.fillStyle = '#0e0e0e'; ctx.fillRect(a[0], by, a[2], boxH); ctx.strokeStyle = 'rgba(255,255,255,.18)'; ctx.strokeRect(a[0] + .5, by + .5, a[2] - 1, boxH - 1);
+    shown.forEach(function (s, k) { PK.text(ctx, s, a[0] + 12, by + 22 + k * 18, { size: 12, color: 'rgba(255,255,255,.88)', ls: 0 }); });
+    if (Math.floor(S.t * 2) % 2 === 0 || C.state === 'type' && C.wait > 0 && C.wait < .2) {
+      var lastLine = shown[shown.length - 1] || ''; ctx.font = "12px 'Martian Mono',monospace";
+      ctx.fillStyle = 'rgba(255,255,255,.8)'; ctx.fillRect(a[0] + 13 + ctx.measureText(lastLine).width, by + 11 + (shown.length - 1) * 18, 7, 14);
+    }
+    if (!C.buf) PK.text(ctx, C.state === 'wait' ? 'waiting for the agent' : '', a[0] + 12, by + 22, { size: 12, color: 'rgba(255,255,255,.3)', ls: 0 });
+    // the log above the box, newest at the bottom
+    var y = by - 12;
+    for (var k = C.log.length - 1; k >= 0 && y > a[1] + 14; k--) {
+      var m = C.log[k];
+      if (m.who === 'me') {
+        ctx.font = "12px 'Martian Mono',monospace";
+        var ml = PK.wrap(ctx, m.s, a[2] * .78 - 20), mh = 14 + ml.length * 17, mw = Math.max.apply(null, ml.map(function (s) { return ctx.measureText(s).width; })) + 20;
+        y -= mh; ctx.fillStyle = '#1c1c1c'; ctx.fillRect(a[0] + a[2] - mw, y, mw, mh);
+        ml.forEach(function (s, j) { PK.text(ctx, s, a[0] + a[2] - mw + 10, y + 19 + j * 17, { size: 12, color: 'rgba(255,255,255,.7)', ls: 0 }); });
+        y -= 10;
+      } else {
+        if (m.g) { var cs = Math.min(84, a[3] * .32); y -= cs * 1.2; PK.card(ctx, m.g, a[0], y, cs); PK.text(ctx, 'one card', a[0] + cs + 10, y + cs * .6, { size: 11 }); }
+        else { y -= 20; PK.text(ctx, 'agent working' + '...'.slice(0, 1 + Math.floor(S.t * 2) % 3), a[0], y + 14, { size: 11, color: 'rgba(255,255,255,.4)' }); }
+        y -= 12;
+      }
+    }
+    ctx.restore();
+
+    // the grid panel
+    var b = L.b, G = S.grid;
+    PK.text(ctx, 'JUDGING', b[0], b[1] + 4, { color: 'rgba(255,255,255,.75)' });
+    PK.text(ctx, G.n + ' directions', b[0] + b[2], b[1] + 4, { align: 'right', color: 'rgba(255,255,255,.75)' });
+    G.cells.forEach(function (c, k) {
+      var xy = cellXY(k), o = {}, s = L.cw, x = xy[0], yy = xy[1];
+      if (c.st === 'in') { var t = PK.ease(c.t / .3); o.alpha = t; yy -= (1 - t) * 10; }
+      if (c.st === 'out') { var u = PK.easeIn(c.t / .28); o.alpha = 1 - u; o.minus = 1; s = L.cw * (1 - .25 * u); x += (L.cw - s) / 2; yy += (L.cw - s) / 2; }
+      if (c.st === 'kept') { o.plus = 1 - c.t / 1.1 * .5; o.outline = .75 * (1 - c.t / 1.1); }
+      PK.card(ctx, c.g, x, yy, s, o);
+    });
+    G.taps.forEach(function (p) {
+      var t = p.t / .4; ctx.strokeStyle = 'rgba(255,255,255,' + (1 - t) * .9 + ')'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(p.x, p.y, 6 + t * 18, 0, 7); ctx.stroke();
+    });
+
+    if (!running) {
+      var ba = Math.min(1, S.end / .4);
+      ctx.fillStyle = 'rgba(0,0,0,' + ba * .78 + ')'; ctx.fillRect(0, 30, W, H - 30);
+      var cy = H * .42;
+      PK.text(ctx, C.n + '  :  ' + G.n, W / 2, cy, { size: 40, font: "'Archivo',sans-serif", align: 'center', color: 'rgba(255,255,255,' + ba + ')', ls: .04 });
+      PK.text(ctx, 'directions in one minute, typed : tapped', W / 2, cy + 30, { align: 'center', color: 'rgba(255,255,255,' + ba * .6 + ')' });
+      PK.text(ctx, 'same person, same minute', W / 2, cy + 54, { align: 'center', color: 'rgba(255,255,255,' + ba * .4 + ')' });
+    }
+    var fn = ['human behaviour runs at about 10 bits a second', '(Zheng & Meister, 2024)'];
+    if (W >= 700) fn = [fn.join(' ')];
+    fn.forEach(function (s, k) { PK.text(ctx, s, W / 2, H - 14 - (fn.length - 1 - k) * 14, { size: 10, align: 'center', color: 'rgba(255,255,255,.32)', ls: .02 }); });
+    ctx.globalAlpha = 1;
+  }
+  PK.stage(cv, draw);
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,357 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Picker 1 — the run-through</title>
+<link rel="preload" href="../fonts/MartianMono.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="../fonts/Archivo.woff2" as="font" type="font/woff2" crossorigin>
+<style>
+  @font-face{font-family:'Martian Mono';font-style:normal;font-weight:400;font-display:swap;src:url('../fonts/MartianMono.woff2') format('woff2');}
+  @font-face{font-family:'Archivo';font-style:normal;font-weight:700;font-display:swap;src:url('../fonts/Archivo.woff2') format('woff2');}
+  html,body{margin:0;background:#000;color:#fff;}
+  body{font-family:'Martian Mono',monospace;-webkit-font-smoothing:antialiased;}
+  .top{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:14px 16px 0;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.5);}
+  .top a{color:inherit;text-decoration:none;}
+  #stage{display:block;width:100%;height:calc(100vh - 150px);height:calc(100svh - 150px);min-height:520px;touch-action:manipulation;-webkit-tap-highlight-color:transparent;user-select:none;}
+  .cap{max-width:1100px;margin:0 auto;padding:8px 16px 0;}
+  .wk-head{display:flex;gap:14px;align-items:baseline;}
+  .wk-year{font-size:11px;letter-spacing:.1em;color:rgba(255,255,255,.5);}
+  .wk-title{font-size:13px;letter-spacing:.12em;text-transform:uppercase;line-height:1.5;}
+  .wk-desc{margin:8px 0 0;font-size:12px;line-height:1.7;letter-spacing:.02em;color:rgba(255,255,255,.66);max-width:640px;}
+  .note{margin:18px 0 0;font-size:11px;line-height:1.7;letter-spacing:.04em;color:rgba(255,255,255,.42);max-width:640px;}
+  .sk{display:flex;gap:10px 18px;flex-wrap:wrap;max-width:1100px;margin:0 auto;padding:22px 16px 56px;font-size:11px;letter-spacing:.1em;text-transform:uppercase;}
+  .sk a{color:rgba(255,255,255,.45);text-decoration:none;} .sk a.on{color:#fff;}
+  @media (min-width:900px){ .top{padding:22px 40px 0;} #stage{height:min(calc(100svh - 170px),680px);} .cap,.sk{padding-left:40px;padding-right:40px;} }
+</style>
+</head>
+<body>
+<div class="top"><a href="./">&larr; playground</a><span>sketch 1 / 4</span></div>
+<canvas id="stage"></canvas>
+<div class="cap">
+  <div class="wk-head"><span class="wk-year">2026</span><span class="wk-title">The picker</span></div>
+  <p class="wk-desc">Agents make, a person picks. A chat runs at the speed of typing; the picker runs at the speed of judging: a tap a card, and the picks steer the next round.</p>
+  <p class="note">Sketch 1 of 4, the run-through: Agent-made cards arrive one at a time, like looks wheeled in on a rack. Each is kept or flicked away in a beat; the keeps grow the next round. Tap − or + to judge them yourself. All the cards are drawn here, made up; none come from a real picker.</p>
+</div>
+<nav class="sk"><a href="picker-run-through.html" class=on>1 the run-through</a><a href="picker-typing-vs-judging.html">2 typing vs judging</a><a href="picker-board.html">3 the board</a><a href="picker-lineage.html">4 the lineage</a></nav>
+<script>
+/* Drawn picker cards. A card is a gene (a seed's worth of numbers) drawn as a small generated picture in the picker's
+   card shape: the picture, then a bar with its name, − and +. Nothing here comes from a real picker; every card is
+   made up on the spot. The same code is in each picker-*.html sketch, so each page stands alone. */
+var PK = (function () {
+  function rng(seed) {
+    var s = (seed | 0) || 0x2545f491;
+    var r = function () { s ^= s << 13; s ^= s >>> 17; s ^= s << 5; return (s >>> 0) / 4294967296; };
+    r(); r(); r(); return r;
+  }
+  function clamp(v, a, b) { return v < a ? a : v > b ? b : v; }
+  function lerp(a, b, t) { return a + (b - a) * t; }
+  function ease(t) { t = clamp(t, 0, 1); return 1 - Math.pow(1 - t, 3); }
+  function easeIn(t) { t = clamp(t, 0, 1); return t * t * t; }
+  function easeIO(t) { t = clamp(t, 0, 1); return t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2; }
+  function hsl(h, s, l) {
+    h = ((h % 360) + 360) % 360 / 360;
+    var q = l < .5 ? l * (1 + s) : l + s - l * s, p = 2 * l - q;
+    function f(t) { if (t < 0) t += 1; if (t > 1) t -= 1;
+      return t < 1 / 6 ? p + (q - p) * 6 * t : t < .5 ? q : t < 2 / 3 ? p + (q - p) * (2 / 3 - t) * 6 : p; }
+    return [f(h + 1 / 3) * 255, f(h) * 255, f(h - 1 / 3) * 255];
+  }
+  function hueDist(a, b) { var d = Math.abs((((a - b) % 360) + 360) % 360); return d > 180 ? 360 - d : d; }
+
+  // genes: k = the kind of picture, h1/h2 = dark and light hue, s = saturation, c = contrast, f = frequency,
+  // a = angle, cx/cy = a centre, ring = the picker fixture's circle, w = warp
+  var nextId = 0;
+  function gene(r) {
+    return { id: ++nextId, k: (r() * 6) | 0, h1: r() * 360, h2: r() * 360, s: .3 + r() * .65, c: .25 + r() * .75,
+      f: 1.5 + r() * 8, a: r() * Math.PI, cx: (r() - .5) * .8, cy: (r() - .5) * .8, ring: r() < .4, w: r() * 1.6,
+      gen: 0, parent: 0 };
+  }
+  function child(p, r, amt) {
+    amt = amt == null ? 1 : amt;
+    var d = function (x) { return (r() - .5) * x * amt; };
+    return { id: ++nextId, k: r() < .06 * amt ? (r() * 6) | 0 : p.k, h1: p.h1 + d(50), h2: p.h2 + d(40),
+      s: clamp(p.s + d(.25), .15, 1), c: clamp(p.c + d(.3), .1, 1), f: clamp(p.f * (1 + d(.6)), 1.2, 12),
+      a: p.a + d(.9), cx: clamp(p.cx + d(.4), -.6, .6), cy: clamp(p.cy + d(.4), -.6, .6),
+      ring: r() < .12 * amt ? !p.ring : p.ring, w: clamp(p.w + d(.8), 0, 2.4), gen: p.gen + 1, parent: p.id };
+  }
+
+  function value(g, x, y) {
+    var P = Math.PI, v, i, m;
+    switch (g.k) {
+      case 0: v = Math.sin((x * Math.cos(g.a) + y * Math.sin(g.a)) * g.f * P + g.w * Math.sin(y * 3)); break;
+      case 1: v = Math.sin(Math.hypot(x - g.cx, y - g.cy) * g.f * P * 1.3); break;
+      case 2: v = (Math.sin(x * g.f * 2) + Math.sin(y * g.f * 2.6 + g.a * 3) + Math.sin((x + y) * g.f * 1.4)) / 3 * 1.6; break;
+      case 3: v = Math.sin(Math.hypot(x - g.cx, y - g.cy) * g.f * P) * Math.sin(Math.hypot(x + g.cx, y + g.cy) * g.f * P) * 1.4; break;
+      case 4: v = Math.sin(x * g.f * P + g.w * 2.5 * Math.sin(y * g.f * .8 * P + g.a)); break;
+      default:
+        for (m = 0, i = 0; i < 3; i++) {
+          var bx = Math.sin(g.a * 3 + i * 2.1) * .55, by = Math.cos(g.a * 2 + i * 1.7) * .55;
+          m += .12 / ((x - bx) * (x - bx) + (y - by) * (y - by) + .02);
+        }
+        v = Math.sin(m * g.f * .25);
+    }
+    return clamp(.5 + .5 * v * (.5 + g.c * 1.4), 0, 1);
+  }
+  var N = 72, cache = new Map();
+  function thumb(g) {
+    var c = cache.get(g.id); if (c) return c;
+    c = document.createElement('canvas'); c.width = c.height = N;
+    var x = c.getContext('2d'), im = x.createImageData(N, N), d = im.data, r = rng(g.id * 7919 + 13);
+    var a = hsl(g.h1, g.s, .07 + .13 * (1 - g.c)), b = hsl(g.h2, g.s, .5 + .2 * g.s);
+    for (var j = 0; j < N; j++) for (var i = 0; i < N; i++) {
+      var t = value(g, i / N * 2 - 1, j / N * 2 - 1), o = (j * N + i) * 4, n = (r() - .5) * 10;
+      d[o] = a[0] + (b[0] - a[0]) * t + n; d[o + 1] = a[1] + (b[1] - a[1]) * t + n; d[o + 2] = a[2] + (b[2] - a[2]) * t + n; d[o + 3] = 255;
+    }
+    x.putImageData(im, 0, 0);
+    if (g.ring) {
+      x.strokeStyle = 'rgba(' + (b[0] * .6 + 100 | 0) + ',' + (b[1] * .6 + 100 | 0) + ',' + (b[2] * .6 + 100 | 0) + ',.85)';
+      x.lineWidth = 2; x.beginPath(); x.arc(N / 2 + g.cx * N * .3, N / 2 + g.cy * N * .3, N * .17, 0, 7); x.stroke();
+    }
+    cache.set(g.id, c);
+    if (cache.size > 800) cache.delete(cache.keys().next().value);
+    return c;
+  }
+
+  // the picker's card: the picture, then a bar with the name, − and + (o.minus / o.plus light them, 0..1)
+  function card(ctx, g, x, y, w, o) {
+    o = o || {};
+    var bar = o.bar !== false && w >= 44, bh = bar ? Math.round(w * .2) : 0, bw = Math.max(16, w * .17);
+    ctx.save();
+    ctx.globalAlpha *= o.alpha == null ? 1 : o.alpha;
+    if (o.rot) { ctx.translate(x + w / 2, y + (w + bh) / 2); ctx.rotate(o.rot); ctx.translate(-x - w / 2, -y - (w + bh) / 2); }
+    if (o.shadow) { ctx.shadowColor = 'rgba(0,0,0,.6)'; ctx.shadowBlur = o.shadow; ctx.shadowOffsetY = o.shadow * .3; }
+    ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
+    ctx.drawImage(thumb(g), x, y, w, w);
+    ctx.shadowColor = 'transparent';
+    if (bar) {
+      ctx.fillStyle = '#242424'; ctx.fillRect(x, y + w, w, bh);
+      ctx.strokeStyle = '#3a3a3a'; ctx.lineWidth = 1; ctx.strokeRect(x + .5, y + .5, w - 1, w + bh - 1);
+      var fs = Math.max(8, Math.round(bh * .42));
+      ctx.font = fs + "px 'Martian Mono',monospace"; ctx.textBaseline = 'middle'; ctx.textAlign = 'left';
+      ctx.fillStyle = 'rgba(255,255,255,.82)'; ctx.fillText(o.label || ('v' + g.id), x + bh * .35, y + w + bh / 2 + 1);
+      var by = y + w + bh / 2, k = Math.max(3, bh * .16);
+      [[x + w - bw * 2, o.minus, 0], [x + w - bw, o.plus, 1]].forEach(function (b) {
+        ctx.strokeStyle = '#3a3a3a'; ctx.beginPath(); ctx.moveTo(b[0] + .5, y + w); ctx.lineTo(b[0] + .5, y + w + bh); ctx.stroke();
+        if (b[1]) { ctx.fillStyle = b[2] ? 'rgba(120,220,110,' + b[1] * .55 + ')' : 'rgba(255,255,255,' + b[1] * .28 + ')'; ctx.fillRect(b[0] + 1, y + w + 1, bw - 1, bh - 2); }
+        var cx = b[0] + bw / 2;
+        ctx.strokeStyle = 'rgba(255,255,255,.72)'; ctx.lineWidth = Math.max(1, bh * .06); ctx.beginPath();
+        ctx.moveTo(cx - k, by); ctx.lineTo(cx + k, by); if (b[2]) { ctx.moveTo(cx, by - k); ctx.lineTo(cx, by + k); } ctx.stroke();
+      });
+    }
+    if (o.outline) { ctx.strokeStyle = 'rgba(255,255,255,' + o.outline + ')'; ctx.lineWidth = 2; ctx.strokeRect(x - 3, y - 3, w + 6, w + bh + 6); }
+    ctx.restore();
+    return w + bh;
+  }
+  // where a card's − and + are, for taps
+  function buttons(x, y, w) {
+    var bh = Math.round(w * .2), bw = Math.max(16, w * .17);
+    return { minus: [x + w - bw * 2, y + w, bw, bh], plus: [x + w - bw, y + w, bw, bh] };
+  }
+  function inside(p, b, pad) { pad = pad || 0; return p[0] >= b[0] - pad && p[0] <= b[0] + b[2] + pad && p[1] >= b[1] - pad && p[1] <= b[1] + b[3] + pad; }
+
+  // the judge's taste (made up): warm amber on near-black, high contrast, stripes and rings
+  function taste(g) {
+    return .5 * (1 - Math.min(1, hueDist(g.h2, 28) / 80)) + .22 * g.c + .16 * (g.k === 0 || g.k === 1 || g.k === 3 ? 1 : 0) + .12 * (g.s > .55 ? 1 : 0);
+  }
+  function near(a, b) { return a.k === b.k && hueDist(a.h2, b.h2) < 18 && Math.abs(a.f - b.f) < 1.5; }
+  var LINES = ['no.', 'next.', 'mm. no.', 'busy.', 'again?', 'not this season.', 'no. no.', 'pass.'];
+  // a short dry line for a card that's out (nothing for a keep)
+  function line(g, r, seen) {
+    if (seen && r() < .7) return "we've seen it.";
+    if (g.s < .42) return r() < .5 ? 'beige.' : 'tired.';
+    if (g.c < .35) return 'flat.';
+    if (hueDist(g.h2, 28) > 110) return r() < .5 ? 'too cold.' : 'no.';
+    return LINES[(r() * LINES.length) | 0];
+  }
+
+  function stage(cv, draw) {
+    var ctx = cv.getContext('2d'), W = 0, H = 0, DPR = 1, last = 0;
+    function fit() {
+      DPR = Math.min(2, window.devicePixelRatio || 1); W = cv.clientWidth; H = cv.clientHeight;
+      cv.width = Math.round(W * DPR); cv.height = Math.round(H * DPR);
+    }
+    fit(); addEventListener('resize', fit);
+    function loop(t) {
+      var dt = Math.min(.05, (t - (last || t)) / 1000); last = t;
+      if (cv.clientWidth !== W || cv.clientHeight !== H) fit();
+      ctx.setTransform(DPR, 0, 0, DPR, 0, 0); ctx.clearRect(0, 0, W, H);
+      draw(ctx, W, H, dt);
+      requestAnimationFrame(loop);
+    }
+    requestAnimationFrame(loop);
+  }
+  function pointer(cv, fn) {
+    cv.addEventListener('pointerdown', function (e) { var r = cv.getBoundingClientRect(); fn([e.clientX - r.left, e.clientY - r.top]); });
+  }
+  function text(ctx, s, x, y, o) {
+    o = o || {};
+    ctx.font = (o.size || 11) + 'px ' + (o.font || "'Martian Mono',monospace");
+    ctx.fillStyle = o.color || 'rgba(255,255,255,.5)'; ctx.textAlign = o.align || 'left'; ctx.textBaseline = o.base || 'alphabetic';
+    if ('letterSpacing' in ctx) ctx.letterSpacing = (o.ls == null ? .12 : o.ls) + 'em';
+    ctx.fillText(s, x, y);
+    if ('letterSpacing' in ctx) ctx.letterSpacing = '0px';
+  }
+  function wrap(ctx, s, maxW) {
+    var out = [], cur = '';
+    s.split(' ').forEach(function (w) { var t = cur ? cur + ' ' + w : w; if (ctx.measureText(t).width > maxW && cur) { out.push(cur); cur = w; } else cur = t; });
+    out.push(cur); return out;
+  }
+  function clock(t) { var s = Math.floor(t); return Math.floor(s / 60) + ':' + ('0' + s % 60).slice(-2); }
+  function shuffle(a, r) { for (var i = a.length - 1; i > 0; i--) { var j = (r() * (i + 1)) | 0, t = a[i]; a[i] = a[j]; a[j] = t; } return a; }
+
+  return { rng: rng, clamp: clamp, lerp: lerp, ease: ease, easeIn: easeIn, easeIO: easeIO, hueDist: hueDist,
+    gene: gene, child: child, thumb: thumb, card: card, buttons: buttons, inside: inside, taste: taste, near: near,
+    line: line, stage: stage, pointer: pointer, text: text, wrap: wrap, clock: clock, shuffle: shuffle };
+})();
+</script>
+<script>
+/* Sketch 1, the run-through: cards come in one at a time like looks on a rack; each is kept or flicked away in a
+   beat, with a dry line on the outs. Twelve a round, three kept, and the next twelve grow from the keeps. Four rounds,
+   then again from a fresh rack. Tap − or + (or ← →) to judge yourself. */
+(function () {
+  var cv = document.getElementById('stage'), R = PK.rng(Date.now() & 0xffffff), S, L;
+  var PER = 12, KEEP = 3, ROUNDS = 4;
+
+  function rack(parents) {
+    var q = [], i;
+    if (!parents) for (i = 0; i < PER; i++) q.push(PK.gene(R));
+    else for (i = 0; i < PER; i++) q.push(PK.child(parents[i % parents.length], R, Math.max(.35, 1 - .2 * S.round)));
+    PK.shuffle(q, R);
+    q.slice().sort(function (a, b) { return PK.taste(b) - PK.taste(a); }).forEach(function (g, k) { g.auto = k < KEEP ? '+' : '-'; });
+    return q;
+  }
+  function reset() {
+    S = { round: 1, i: 0, cur: null, kept: [], out: [], line: null, judged: 0, you: 0, t: 0, phase: 'run', pt: 0, fade: 1 };
+    S.q = rack(null); next();
+  }
+  function next() { S.cur = { g: S.q[S.i++], ph: 'in', t: 0, hold: .4 + R() * .6 - .06 * S.round, v: null }; }
+
+  function layout(W, H) {
+    var wide = W > H * 1.15, l = { wide: wide };
+    if (wide) {
+      l.cw = Math.round(Math.min(H * .56, 340)); l.cx = Math.round(W / 2 - l.cw / 2); l.cy = Math.round(H * .12);
+      l.lineY = l.cy + l.cw * 1.2 + 40;
+      l.pile = [W / 2 - l.cw / 2 - Math.min(200, W * .15), l.cy + l.cw * .45]; l.ps = 64;
+      l.kx = W / 2 + l.cw / 2 + Math.min(90, W * .06); l.ky = l.cy; l.ks = 56; l.kcols = 3;
+      l.outLabel = [l.pile[0] - l.ps / 2, l.pile[1] - l.ps / 2 - 22]; l.keptLabel = [l.kx, l.cy - 14];
+    } else {
+      l.cw = Math.round(Math.min(W * .76, (H - 260) * .82, 340)); l.cx = Math.round(W / 2 - l.cw / 2); l.cy = Math.round(Math.max(44, H * .07));
+      l.lineY = l.cy + l.cw * 1.2 + 34;
+      var top = Math.min(H - 128, l.lineY + 80);
+      l.ps = 44; l.pile = [16 + 40, top + 58];
+      l.ks = 40; l.kx = W / 2 + 4; l.ky = top + 10; l.kcols = Math.max(1, Math.floor((W / 2 - 20) / (l.ks + 8)));
+      l.outLabel = [16, top]; l.keptLabel = [l.kx, top];
+    }
+    return l;
+  }
+  function keptSlot(k) { return [L.kx + (k % L.kcols) * (L.ks + 8), L.ky + Math.floor(k / L.kcols) * (L.ks + 8)]; }
+
+  function judge(v, byYou) {
+    var c = S.cur; if (!c || (c.ph !== 'in' && c.ph !== 'hold')) return;
+    c.v = v; c.ph = 'v'; c.t = 0; S.judged++; if (byYou) S.you++;
+    if (v === '-') {
+      var seen = S.out.some(function (o) { return PK.near(o.g, c.g); });
+      S.line = { s: PK.line(c.g, R, seen), t: 0 };
+    } else S.line = null;
+  }
+  function update(dt) {
+    S.t += dt; S.pt += dt;
+    if (S.phase === 'banner') { if (S.pt > 1.9) newRound(); return; }
+    if (S.phase === 'fade') { S.fade = Math.max(0, 1 - S.pt / .7); if (S.pt > .8) reset(); return; }
+    S.fade = Math.min(1, S.fade + dt * 3);
+    if (S.line) S.line.t += dt;
+    var c = S.cur; if (!c) return; c.t += dt;
+    if (c.ph === 'in' && c.t > .32) { c.ph = 'hold'; c.t = 0; }
+    else if (c.ph === 'hold' && c.t > c.hold) judge(c.g.auto, false);
+    else if (c.ph === 'v' && c.t > .16) { c.ph = c.v === '-' ? 'out' : 'keep'; c.t = 0; }
+    else if (c.ph === 'out' && c.t > .36) {
+      S.out.push({ g: c.g, dx: (R() - .5) * 22, dy: (R() - .5) * 14, rot: (R() - .5) * .7 }); done();
+    } else if (c.ph === 'keep' && c.t > .5) { S.kept.push(c.g); done(); }
+  }
+  function done() {
+    if (S.i < S.q.length) { next(); return; }
+    S.cur = null; S.phase = 'banner'; S.pt = 0;
+    if (!S.kept.length) S.kept = S.out.map(function (o) { return o.g; }).sort(function (a, b) { return PK.taste(b) - PK.taste(a); }).slice(0, 2);
+  }
+  function newRound() {
+    if (S.round >= ROUNDS) { S.phase = 'fade'; S.pt = 0; return; }
+    S.round++; S.q = rack(S.kept); S.i = 0; S.kept = []; S.out = []; S.phase = 'run'; S.pt = 0; next();
+  }
+
+  function draw(ctx, W, H, dt) {
+    if (!S) reset();
+    L = layout(W, H); update(dt);
+    ctx.globalAlpha = S.fade;
+    var cw = L.cw, c = S.cur;
+
+    PK.text(ctx, 'ROUND ' + S.round + ' / ' + ROUNDS, 16, 22);
+    PK.text(ctx, PK.clock(S.t), W - 16, 22, { align: 'right' });
+
+    // the rack: what's still to come, at the right edge
+    var left = S.q.length - S.i;
+    for (var k = Math.min(3, left) - 1; k >= 0; k--) {
+      var g = S.q[S.i + k];
+      if (L.wide) PK.card(ctx, g, L.cx + 12 + k * 10, L.cy + 6 + k * 3, cw * .96, { alpha: .45 - k * .1 });
+      else PK.card(ctx, g, W - cw * .13 + k * 9, L.cy + 8 + k * 4, cw * .92, { alpha: .28 - k * .06 });
+    }
+
+    // the piles
+    PK.text(ctx, 'OUT · ' + S.out.length, L.outLabel[0], L.outLabel[1]);
+    PK.text(ctx, 'KEPT · ' + S.kept.length, L.keptLabel[0], L.keptLabel[1]);
+    S.out.slice(-7).forEach(function (o, k, a) {
+      PK.card(ctx, o.g, L.pile[0] - L.ps / 2 + o.dx, L.pile[1] - L.ps / 2 + o.dy, L.ps, { bar: false, rot: o.rot, alpha: .3 + .35 * (k / a.length) });
+    });
+    var pulse = S.phase === 'banner' ? .45 + .35 * Math.sin(S.pt * 7) : 0;
+    S.kept.forEach(function (g, k) { var p = keptSlot(k); PK.card(ctx, g, p[0], p[1], L.ks, { bar: false, outline: pulse }); });
+
+    // the card in front
+    if (c) {
+      var x = L.cx, y = L.cy, w = cw, rot = 0, a = 1, mi = 0, pl = 0, t;
+      if (c.ph === 'in') { t = PK.ease(c.t / .32); x = PK.lerp(W + 10, L.cx, t); rot = PK.lerp(.1, 0, t); }
+      else if (c.ph === 'v') { if (c.v === '-') mi = 1; else pl = 1; }
+      else if (c.ph === 'out') {
+        t = PK.easeIn(c.t / .36); mi = 1 - t;
+        x = PK.lerp(L.cx, L.pile[0] - L.ps / 2, t); y = PK.lerp(L.cy, L.pile[1] - L.ps / 2, t); w = PK.lerp(cw, L.ps, t);
+        rot = PK.lerp(0, -.5, t); a = PK.lerp(1, .6, t);
+      } else if (c.ph === 'keep') {
+        t = PK.easeIO(c.t / .5); pl = 1 - t * .6; var p = keptSlot(S.kept.length);
+        x = PK.lerp(L.cx, p[0], t); y = PK.lerp(L.cy, p[1], t); w = PK.lerp(cw, L.ks, t);
+      }
+      PK.card(ctx, c.g, x, y, w, { rot: rot, alpha: a, minus: mi, plus: pl, shadow: w > 100 ? 24 : 0, bar: w > 90 });
+    }
+
+    // the dry line
+    if (S.line && S.line.t < 1.9) {
+      var la = S.line.t < .08 ? S.line.t / .08 : S.line.t > 1.2 ? 1 - (S.line.t - 1.2) / .7 : 1;
+      PK.text(ctx, '“' + S.line.s + '”', W / 2, L.lineY, { size: 16, align: 'center', color: 'rgba(255,255,255,' + la * .92 + ')', ls: .04 });
+    }
+
+    if (S.phase === 'banner') {
+      var ba = Math.min(1, S.pt / .25) * (S.pt > 1.6 ? 1 - (S.pt - 1.6) / .3 : 1);
+      var last = S.round >= ROUNDS, by = L.cy + cw * .55;
+      PK.text(ctx, last ? 'AGAIN' : 'ROUND ' + (S.round + 1), W / 2, by, { size: 30, font: "'Archivo',sans-serif", align: 'center', color: 'rgba(255,255,255,' + ba + ')', ls: .06 });
+      PK.text(ctx, last ? 'from a fresh rack' : 'grown from the ' + S.kept.length + ' kept', W / 2, by + 26, { align: 'center', color: 'rgba(255,255,255,' + ba * .6 + ')' });
+    }
+
+    var foot = S.judged + ' judged · 0 words typed' + (S.you ? ' · ' + S.you + ' by you' : '');
+    PK.text(ctx, foot, W / 2, H - 14, { align: 'center', color: 'rgba(255,255,255,.4)', ls: .06 });
+    if (!S.you && S.round === 1) PK.text(ctx, 'tap − or + to judge', W / 2, L.lineY + (L.wide ? 26 : 24), { align: 'center', color: 'rgba(255,255,255,.28)', ls: .06 });
+    ctx.globalAlpha = 1;
+  }
+
+  PK.pointer(cv, function (p) {
+    var c = S && S.cur; if (!c || (c.ph !== 'in' && c.ph !== 'hold')) return;
+    var b = PK.buttons(L.cx, L.cy, L.cw);
+    if (PK.inside(p, b.minus, 10)) judge('-', true); else if (PK.inside(p, b.plus, 10)) judge('+', true);
+    else if (p[1] > L.cy && p[1] < L.cy + L.cw * 1.2 && p[0] > L.cx - 20 && p[0] < L.cx + L.cw + 20) judge(p[0] < W2() ? '-' : '+', true);
+  });
+  function W2() { return cv.clientWidth / 2; }
+  addEventListener('keydown', function (e) {
+    if (e.key === 'ArrowLeft' || e.key === '-') judge('-', true);
+    if (e.key === 'ArrowRight' || e.key === '+') judge('+', true);
+  });
+  PK.stage(cv, draw);
+})();
+</script>
+</body>
+</html>

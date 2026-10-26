@@ -1,0 +1,331 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Picker 4 — the lineage</title>
+<link rel="preload" href="../fonts/MartianMono.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="../fonts/Archivo.woff2" as="font" type="font/woff2" crossorigin>
+<style>
+  @font-face{font-family:'Martian Mono';font-style:normal;font-weight:400;font-display:swap;src:url('../fonts/MartianMono.woff2') format('woff2');}
+  @font-face{font-family:'Archivo';font-style:normal;font-weight:700;font-display:swap;src:url('../fonts/Archivo.woff2') format('woff2');}
+  html,body{margin:0;background:#000;color:#fff;}
+  body{font-family:'Martian Mono',monospace;-webkit-font-smoothing:antialiased;}
+  .top{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:14px 16px 0;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.5);}
+  .top a{color:inherit;text-decoration:none;}
+  #stage{display:block;width:100%;height:calc(100vh - 150px);height:calc(100svh - 150px);min-height:520px;touch-action:manipulation;-webkit-tap-highlight-color:transparent;user-select:none;}
+  .cap{max-width:1100px;margin:0 auto;padding:8px 16px 0;}
+  .wk-head{display:flex;gap:14px;align-items:baseline;}
+  .wk-year{font-size:11px;letter-spacing:.1em;color:rgba(255,255,255,.5);}
+  .wk-title{font-size:13px;letter-spacing:.12em;text-transform:uppercase;line-height:1.5;}
+  .wk-desc{margin:8px 0 0;font-size:12px;line-height:1.7;letter-spacing:.02em;color:rgba(255,255,255,.66);max-width:640px;}
+  .note{margin:18px 0 0;font-size:11px;line-height:1.7;letter-spacing:.04em;color:rgba(255,255,255,.42);max-width:640px;}
+  .sk{display:flex;gap:10px 18px;flex-wrap:wrap;max-width:1100px;margin:0 auto;padding:22px 16px 56px;font-size:11px;letter-spacing:.1em;text-transform:uppercase;}
+  .sk a{color:rgba(255,255,255,.45);text-decoration:none;} .sk a.on{color:#fff;}
+  @media (min-width:900px){ .top{padding:22px 40px 0;} #stage{height:min(calc(100svh - 170px),680px);} .cap,.sk{padding-left:40px;padding-right:40px;} }
+</style>
+</head>
+<body>
+<div class="top"><a href="./">&larr; playground</a><span>sketch 4 / 4</span></div>
+<canvas id="stage"></canvas>
+<div class="cap">
+  <div class="wk-head"><span class="wk-year">2026</span><span class="wk-title">The picker</span></div>
+  <p class="wk-desc">Agents make, a person picks. A chat runs at the speed of typing; the picker runs at the speed of judging: a tap a card, and the picks steer the next round.</p>
+  <p class="note">Sketch 4 of 4, the lineage: One card revised again and again. Each round is a handful of tries; the picked one is joined into a line, and almost nothing is typed. All the cards are drawn here, made up; none come from a real picker.</p>
+</div>
+<nav class="sk"><a href="picker-run-through.html">1 the run-through</a><a href="picker-typing-vs-judging.html">2 typing vs judging</a><a href="picker-board.html">3 the board</a><a href="picker-lineage.html" class=on>4 the lineage</a></nav>
+<script>
+/* Drawn picker cards. A card is a gene (a seed's worth of numbers) drawn as a small generated picture in the picker's
+   card shape: the picture, then a bar with its name, − and +. Nothing here comes from a real picker; every card is
+   made up on the spot. The same code is in each picker-*.html sketch, so each page stands alone. */
+var PK = (function () {
+  function rng(seed) {
+    var s = (seed | 0) || 0x2545f491;
+    var r = function () { s ^= s << 13; s ^= s >>> 17; s ^= s << 5; return (s >>> 0) / 4294967296; };
+    r(); r(); r(); return r;
+  }
+  function clamp(v, a, b) { return v < a ? a : v > b ? b : v; }
+  function lerp(a, b, t) { return a + (b - a) * t; }
+  function ease(t) { t = clamp(t, 0, 1); return 1 - Math.pow(1 - t, 3); }
+  function easeIn(t) { t = clamp(t, 0, 1); return t * t * t; }
+  function easeIO(t) { t = clamp(t, 0, 1); return t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2; }
+  function hsl(h, s, l) {
+    h = ((h % 360) + 360) % 360 / 360;
+    var q = l < .5 ? l * (1 + s) : l + s - l * s, p = 2 * l - q;
+    function f(t) { if (t < 0) t += 1; if (t > 1) t -= 1;
+      return t < 1 / 6 ? p + (q - p) * 6 * t : t < .5 ? q : t < 2 / 3 ? p + (q - p) * (2 / 3 - t) * 6 : p; }
+    return [f(h + 1 / 3) * 255, f(h) * 255, f(h - 1 / 3) * 255];
+  }
+  function hueDist(a, b) { var d = Math.abs((((a - b) % 360) + 360) % 360); return d > 180 ? 360 - d : d; }
+
+  // genes: k = the kind of picture, h1/h2 = dark and light hue, s = saturation, c = contrast, f = frequency,
+  // a = angle, cx/cy = a centre, ring = the picker fixture's circle, w = warp
+  var nextId = 0;
+  function gene(r) {
+    return { id: ++nextId, k: (r() * 6) | 0, h1: r() * 360, h2: r() * 360, s: .3 + r() * .65, c: .25 + r() * .75,
+      f: 1.5 + r() * 8, a: r() * Math.PI, cx: (r() - .5) * .8, cy: (r() - .5) * .8, ring: r() < .4, w: r() * 1.6,
+      gen: 0, parent: 0 };
+  }
+  function child(p, r, amt) {
+    amt = amt == null ? 1 : amt;
+    var d = function (x) { return (r() - .5) * x * amt; };
+    return { id: ++nextId, k: r() < .06 * amt ? (r() * 6) | 0 : p.k, h1: p.h1 + d(50), h2: p.h2 + d(40),
+      s: clamp(p.s + d(.25), .15, 1), c: clamp(p.c + d(.3), .1, 1), f: clamp(p.f * (1 + d(.6)), 1.2, 12),
+      a: p.a + d(.9), cx: clamp(p.cx + d(.4), -.6, .6), cy: clamp(p.cy + d(.4), -.6, .6),
+      ring: r() < .12 * amt ? !p.ring : p.ring, w: clamp(p.w + d(.8), 0, 2.4), gen: p.gen + 1, parent: p.id };
+  }
+
+  function value(g, x, y) {
+    var P = Math.PI, v, i, m;
+    switch (g.k) {
+      case 0: v = Math.sin((x * Math.cos(g.a) + y * Math.sin(g.a)) * g.f * P + g.w * Math.sin(y * 3)); break;
+      case 1: v = Math.sin(Math.hypot(x - g.cx, y - g.cy) * g.f * P * 1.3); break;
+      case 2: v = (Math.sin(x * g.f * 2) + Math.sin(y * g.f * 2.6 + g.a * 3) + Math.sin((x + y) * g.f * 1.4)) / 3 * 1.6; break;
+      case 3: v = Math.sin(Math.hypot(x - g.cx, y - g.cy) * g.f * P) * Math.sin(Math.hypot(x + g.cx, y + g.cy) * g.f * P) * 1.4; break;
+      case 4: v = Math.sin(x * g.f * P + g.w * 2.5 * Math.sin(y * g.f * .8 * P + g.a)); break;
+      default:
+        for (m = 0, i = 0; i < 3; i++) {
+          var bx = Math.sin(g.a * 3 + i * 2.1) * .55, by = Math.cos(g.a * 2 + i * 1.7) * .55;
+          m += .12 / ((x - bx) * (x - bx) + (y - by) * (y - by) + .02);
+        }
+        v = Math.sin(m * g.f * .25);
+    }
+    return clamp(.5 + .5 * v * (.5 + g.c * 1.4), 0, 1);
+  }
+  var N = 72, cache = new Map();
+  function thumb(g) {
+    var c = cache.get(g.id); if (c) return c;
+    c = document.createElement('canvas'); c.width = c.height = N;
+    var x = c.getContext('2d'), im = x.createImageData(N, N), d = im.data, r = rng(g.id * 7919 + 13);
+    var a = hsl(g.h1, g.s, .07 + .13 * (1 - g.c)), b = hsl(g.h2, g.s, .5 + .2 * g.s);
+    for (var j = 0; j < N; j++) for (var i = 0; i < N; i++) {
+      var t = value(g, i / N * 2 - 1, j / N * 2 - 1), o = (j * N + i) * 4, n = (r() - .5) * 10;
+      d[o] = a[0] + (b[0] - a[0]) * t + n; d[o + 1] = a[1] + (b[1] - a[1]) * t + n; d[o + 2] = a[2] + (b[2] - a[2]) * t + n; d[o + 3] = 255;
+    }
+    x.putImageData(im, 0, 0);
+    if (g.ring) {
+      x.strokeStyle = 'rgba(' + (b[0] * .6 + 100 | 0) + ',' + (b[1] * .6 + 100 | 0) + ',' + (b[2] * .6 + 100 | 0) + ',.85)';
+      x.lineWidth = 2; x.beginPath(); x.arc(N / 2 + g.cx * N * .3, N / 2 + g.cy * N * .3, N * .17, 0, 7); x.stroke();
+    }
+    cache.set(g.id, c);
+    if (cache.size > 800) cache.delete(cache.keys().next().value);
+    return c;
+  }
+
+  // the picker's card: the picture, then a bar with the name, − and + (o.minus / o.plus light them, 0..1)
+  function card(ctx, g, x, y, w, o) {
+    o = o || {};
+    var bar = o.bar !== false && w >= 44, bh = bar ? Math.round(w * .2) : 0, bw = Math.max(16, w * .17);
+    ctx.save();
+    ctx.globalAlpha *= o.alpha == null ? 1 : o.alpha;
+    if (o.rot) { ctx.translate(x + w / 2, y + (w + bh) / 2); ctx.rotate(o.rot); ctx.translate(-x - w / 2, -y - (w + bh) / 2); }
+    if (o.shadow) { ctx.shadowColor = 'rgba(0,0,0,.6)'; ctx.shadowBlur = o.shadow; ctx.shadowOffsetY = o.shadow * .3; }
+    ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
+    ctx.drawImage(thumb(g), x, y, w, w);
+    ctx.shadowColor = 'transparent';
+    if (bar) {
+      ctx.fillStyle = '#242424'; ctx.fillRect(x, y + w, w, bh);
+      ctx.strokeStyle = '#3a3a3a'; ctx.lineWidth = 1; ctx.strokeRect(x + .5, y + .5, w - 1, w + bh - 1);
+      var fs = Math.max(8, Math.round(bh * .42));
+      ctx.font = fs + "px 'Martian Mono',monospace"; ctx.textBaseline = 'middle'; ctx.textAlign = 'left';
+      ctx.fillStyle = 'rgba(255,255,255,.82)'; ctx.fillText(o.label || ('v' + g.id), x + bh * .35, y + w + bh / 2 + 1);
+      var by = y + w + bh / 2, k = Math.max(3, bh * .16);
+      [[x + w - bw * 2, o.minus, 0], [x + w - bw, o.plus, 1]].forEach(function (b) {
+        ctx.strokeStyle = '#3a3a3a'; ctx.beginPath(); ctx.moveTo(b[0] + .5, y + w); ctx.lineTo(b[0] + .5, y + w + bh); ctx.stroke();
+        if (b[1]) { ctx.fillStyle = b[2] ? 'rgba(120,220,110,' + b[1] * .55 + ')' : 'rgba(255,255,255,' + b[1] * .28 + ')'; ctx.fillRect(b[0] + 1, y + w + 1, bw - 1, bh - 2); }
+        var cx = b[0] + bw / 2;
+        ctx.strokeStyle = 'rgba(255,255,255,.72)'; ctx.lineWidth = Math.max(1, bh * .06); ctx.beginPath();
+        ctx.moveTo(cx - k, by); ctx.lineTo(cx + k, by); if (b[2]) { ctx.moveTo(cx, by - k); ctx.lineTo(cx, by + k); } ctx.stroke();
+      });
+    }
+    if (o.outline) { ctx.strokeStyle = 'rgba(255,255,255,' + o.outline + ')'; ctx.lineWidth = 2; ctx.strokeRect(x - 3, y - 3, w + 6, w + bh + 6); }
+    ctx.restore();
+    return w + bh;
+  }
+  // where a card's − and + are, for taps
+  function buttons(x, y, w) {
+    var bh = Math.round(w * .2), bw = Math.max(16, w * .17);
+    return { minus: [x + w - bw * 2, y + w, bw, bh], plus: [x + w - bw, y + w, bw, bh] };
+  }
+  function inside(p, b, pad) { pad = pad || 0; return p[0] >= b[0] - pad && p[0] <= b[0] + b[2] + pad && p[1] >= b[1] - pad && p[1] <= b[1] + b[3] + pad; }
+
+  // the judge's taste (made up): warm amber on near-black, high contrast, stripes and rings
+  function taste(g) {
+    return .5 * (1 - Math.min(1, hueDist(g.h2, 28) / 80)) + .22 * g.c + .16 * (g.k === 0 || g.k === 1 || g.k === 3 ? 1 : 0) + .12 * (g.s > .55 ? 1 : 0);
+  }
+  function near(a, b) { return a.k === b.k && hueDist(a.h2, b.h2) < 18 && Math.abs(a.f - b.f) < 1.5; }
+  var LINES = ['no.', 'next.', 'mm. no.', 'busy.', 'again?', 'not this season.', 'no. no.', 'pass.'];
+  // a short dry line for a card that's out (nothing for a keep)
+  function line(g, r, seen) {
+    if (seen && r() < .7) return "we've seen it.";
+    if (g.s < .42) return r() < .5 ? 'beige.' : 'tired.';
+    if (g.c < .35) return 'flat.';
+    if (hueDist(g.h2, 28) > 110) return r() < .5 ? 'too cold.' : 'no.';
+    return LINES[(r() * LINES.length) | 0];
+  }
+
+  function stage(cv, draw) {
+    var ctx = cv.getContext('2d'), W = 0, H = 0, DPR = 1, last = 0;
+    function fit() {
+      DPR = Math.min(2, window.devicePixelRatio || 1); W = cv.clientWidth; H = cv.clientHeight;
+      cv.width = Math.round(W * DPR); cv.height = Math.round(H * DPR);
+    }
+    fit(); addEventListener('resize', fit);
+    function loop(t) {
+      var dt = Math.min(.05, (t - (last || t)) / 1000); last = t;
+      if (cv.clientWidth !== W || cv.clientHeight !== H) fit();
+      ctx.setTransform(DPR, 0, 0, DPR, 0, 0); ctx.clearRect(0, 0, W, H);
+      draw(ctx, W, H, dt);
+      requestAnimationFrame(loop);
+    }
+    requestAnimationFrame(loop);
+  }
+  function pointer(cv, fn) {
+    cv.addEventListener('pointerdown', function (e) { var r = cv.getBoundingClientRect(); fn([e.clientX - r.left, e.clientY - r.top]); });
+  }
+  function text(ctx, s, x, y, o) {
+    o = o || {};
+    ctx.font = (o.size || 11) + 'px ' + (o.font || "'Martian Mono',monospace");
+    ctx.fillStyle = o.color || 'rgba(255,255,255,.5)'; ctx.textAlign = o.align || 'left'; ctx.textBaseline = o.base || 'alphabetic';
+    if ('letterSpacing' in ctx) ctx.letterSpacing = (o.ls == null ? .12 : o.ls) + 'em';
+    ctx.fillText(s, x, y);
+    if ('letterSpacing' in ctx) ctx.letterSpacing = '0px';
+  }
+  function wrap(ctx, s, maxW) {
+    var out = [], cur = '';
+    s.split(' ').forEach(function (w) { var t = cur ? cur + ' ' + w : w; if (ctx.measureText(t).width > maxW && cur) { out.push(cur); cur = w; } else cur = t; });
+    out.push(cur); return out;
+  }
+  function clock(t) { var s = Math.floor(t); return Math.floor(s / 60) + ':' + ('0' + s % 60).slice(-2); }
+  function shuffle(a, r) { for (var i = a.length - 1; i > 0; i--) { var j = (r() * (i + 1)) | 0, t = a[i]; a[i] = a[j]; a[j] = t; } return a; }
+
+  return { rng: rng, clamp: clamp, lerp: lerp, ease: ease, easeIn: easeIn, easeIO: easeIO, hueDist: hueDist,
+    gene: gene, child: child, thumb: thumb, card: card, buttons: buttons, inside: inside, taste: taste, near: near,
+    line: line, stage: stage, pointer: pointer, text: text, wrap: wrap, clock: clock, shuffle: shuffle };
+})();
+</script>
+<script>
+/* Sketch 4, the lineage: one card revised again and again. Each round grows a handful of tries from the last pick;
+   one is picked with a tap, the rest fade, and the picks are joined into a line down the page. Twice a word is
+   typed ("warmer", "slower"); every other round is steered by the tap alone. At the end the whole tree is shown. */
+(function () {
+  var cv = document.getElementById('stage'), R = PK.rng(Date.now() & 0xffffff), S, L;
+  var ROWS = 9, WORDS = { 3: 'warmer', 6: 'slower' };
+
+  function layout(W, H) {
+    var wide = W > H * 1.1, n = wide ? 6 : 4, gap = wide ? 14 : 10;
+    var cw = Math.floor(Math.min((Math.min(W, 900) - 32 - (n - 1) * gap - (wide ? 200 : 0)) / n, wide ? 96 : 86));
+    return { wide: wide, n: n, gap: gap, cw: cw, rh: Math.round(cw * 1.2 + (wide ? 48 : 44)), cx: wide ? W / 2 - 80 : W / 2 };
+  }
+  function rowY(r) { return 52 + r * L.rh; }
+  function pos(r, i) {
+    var k = S.rows[r].gs.length, w = k * L.cw + (k - 1) * L.gap;
+    return [L.cx - w / 2 + i * (L.cw + L.gap), rowY(r)];
+  }
+  function reset() {
+    var seed = PK.gene(R);
+    S = { t: 0, rows: [{ gs: [seed], pick: 0, picked: 1, word: null }], ph: 'next', pt: 0, cam: 0, zoom: 1, fade: 0, tries: 1, words: 0, typed: '' };
+  }
+  function grow(word) {
+    var last = S.rows[S.rows.length - 1], p = last.gs[last.pick], r = S.rows.length, gs = [];
+    for (var i = 0; i < L.n; i++) {
+      var g = PK.child(p, R, Math.max(.35, 1.25 - .1 * r));
+      if (word === 'warmer') { var d = ((28 - g.h2 + 540) % 360) - 180; g.h2 += d * .6; g.s = Math.max(g.s, .6); }
+      if (word === 'slower') g.f = Math.max(1.4, g.f * .6);
+      gs.push(g);
+    }
+    var best = 0, bs = -1;
+    gs.forEach(function (g, k) { var s = PK.taste(g) + R() * .12; if (s > bs) { bs = s; best = k; } });
+    S.rows.push({ gs: gs, pick: best, picked: 0, word: word || null });
+    S.tries += gs.length;
+  }
+  function update(dt) {
+    S.t += dt; S.pt += dt;
+    var row = S.rows[S.rows.length - 1];
+    if (S.ph === 'next') {
+      if (S.rows.length >= ROWS) { S.ph = 'zoom'; S.pt = 0; return; }
+      var w = WORDS[S.rows.length];
+      if (w) { S.ph = 'word'; S.pt = 0; S.word = w; S.typed = ''; } else { grow(null); S.ph = 'grow'; S.pt = 0; }
+    } else if (S.ph === 'word') {
+      S.typed = S.word.slice(0, Math.floor(Math.max(0, S.pt - .3) * 6));
+      if (S.pt > .3 + S.word.length / 6 + .7) { S.words++; grow(S.word); S.ph = 'grow'; S.pt = 0; }
+    } else if (S.ph === 'grow' && S.pt > .7) { S.ph = 'look'; S.pt = 0; }
+    else if (S.ph === 'look' && S.pt > .75) { S.ph = 'pick'; S.pt = 0; }
+    else if (S.ph === 'pick') { row.picked = Math.min(1, S.pt / .45); if (S.pt > .6) { S.ph = 'next'; S.pt = 0; } }
+    else if (S.ph === 'zoom' && S.pt > 4.4) { S.ph = 'fade'; S.pt = 0; }
+    else if (S.ph === 'fade' && S.pt > .9) reset();
+  }
+
+  function draw(ctx, W, H, dt) {
+    L = layout(W, H);
+    if (!S) reset();
+    update(dt);
+    S.fade = S.ph === 'fade' ? Math.max(0, 1 - S.pt / .8) : Math.min(1, S.fade + dt * 2);
+    ctx.globalAlpha = S.fade;
+    var cw = L.cw, bh = Math.round(cw * .2), last = S.rows.length - 1;
+
+    // the camera follows the newest round; at the end it pulls back to show the whole tree
+    var full = rowY(ROWS - 1) + cw + bh + 40, fit = Math.min(1, (H - 96) / (full - 40));
+    var target = Math.max(0, rowY(last) + cw + bh + 50 - H);
+    if (S.ph === 'zoom' || S.ph === 'fade') {
+      var u = PK.easeIO(S.ph === 'zoom' ? S.pt / 1.4 : 1); S.zoom = PK.lerp(1, fit, u); target = 0;
+      S.cam += (target - S.cam) * Math.min(1, dt * 3);
+    } else { S.zoom = 1; S.cam += (target - S.cam) * Math.min(1, dt * 3); }
+
+    PK.text(ctx, 'ROUND ' + S.rows.length, 16, 22);
+    PK.text(ctx, PK.clock(S.t), W - 16, 22, { align: 'right' });
+
+    ctx.save(); ctx.beginPath(); ctx.rect(0, 32, W, H - 60); ctx.clip();
+    ctx.translate(L.cx, 40); ctx.scale(S.zoom, S.zoom); ctx.translate(-L.cx, -40 - S.cam);
+
+    S.rows.forEach(function (row, r) {
+      var newest = r === last, growing = newest && S.ph === 'grow';
+      // the lines from the parent pick
+      if (r > 0) {
+        var pr = S.rows[r - 1], pp = pos(r - 1, pr.pick), ax = pp[0] + cw / 2, ay = pp[1] + cw + bh;
+        row.gs.forEach(function (g, i) {
+          var p = pos(r, i), on = i === row.pick ? row.picked : 0, u = growing ? PK.ease((S.pt - i * .06) / .5) : 1;
+          if (u <= 0) return;
+          ctx.strokeStyle = 'rgba(255,255,255,' + (.1 + .6 * on) + ')'; ctx.lineWidth = on ? 1.5 : 1;
+          var ex = PK.lerp(ax, p[0] + cw / 2, u), ey = PK.lerp(ay, p[1], u);
+          ctx.beginPath(); ctx.moveTo(ax, ay); ctx.bezierCurveTo(ax, ay + (ey - ay) * .5, ex, ey - (ey - ay) * .5, ex, ey); ctx.stroke();
+        });
+      }
+      row.gs.forEach(function (g, i) {
+        var p = pos(r, i), x = p[0], y = p[1], a = 1, o = {};
+        if (growing) {
+          var u = PK.ease((S.pt - i * .06) / .5); if (u <= 0) return;
+          var pp2 = pos(r - 1, S.rows[r - 1].pick);
+          x = PK.lerp(pp2[0], x, u); y = PK.lerp(pp2[1] + cw * .6, y, u); a = u;
+        }
+        if (i === row.pick) { o.plus = row.picked * (newest && S.ph === 'pick' ? 1 : .35); o.outline = .55 * row.picked; }
+        else a *= 1 - .78 * row.picked;
+        o.alpha = a; o.label = 'v' + (r + 1) + '.' + (i + 1);
+        PK.card(ctx, g, x, y, cw, o);
+      });
+      // the row's note: its round, and the word if one was typed
+      var p0 = pos(r, 0), note = r === 0 ? 'the first try' : 'round ' + (r + 1);
+      var nx = L.wide ? pos(r, row.gs.length - 1)[0] + cw + 22 : p0[0], ny = L.wide ? p0[1] + cw * .55 : p0[1] - 9;
+      PK.text(ctx, note, nx, ny, { size: 10, color: 'rgba(255,255,255,.38)' });
+      if (row.word) PK.text(ctx, '“' + row.word + '”', nx + (L.wide ? 0 : ctx.measureText(note).width + 14), ny + (L.wide ? 18 : 0), { size: 12, color: 'rgba(255,255,255,.9)', ls: .04 });
+      else if (r > 0 && row.picked >= 1) PK.text(ctx, L.wide ? 'a tap' : '· a tap', nx + (L.wide ? 0 : ctx.measureText(note).width + 12), ny + (L.wide ? 18 : 0), { size: 10, color: 'rgba(255,255,255,.3)' });
+    });
+    // a word being typed under the last pick
+    if (S.ph === 'word') {
+      var lp = pos(last, S.rows[last].pick);
+      PK.text(ctx, '“' + S.typed + (Math.floor(S.t * 3) % 2 ? '│' : ' ') + (S.typed.length === S.word.length ? '”' : ''), lp[0] + cw / 2, lp[1] + cw + bh + 22, { size: 13, align: 'center', color: 'rgba(255,255,255,.92)', ls: .04 });
+    }
+    ctx.restore();
+
+    if (S.ph === 'zoom' && S.pt > 1.4) {
+      var ba = Math.min(1, (S.pt - 1.4) / .4);
+      PK.text(ctx, ROWS + ' rounds, ' + S.tries + ' tries, ' + S.words + ' words typed', W / 2, H - 36, { align: 'center', color: 'rgba(255,255,255,' + ba * .8 + ')' });
+    }
+    PK.text(ctx, S.tries + ' tries · ' + S.rows.length + ' picks · ' + S.words + ' words typed', W / 2, H - 14, { align: 'center', color: 'rgba(255,255,255,.4)', ls: .06 });
+    ctx.globalAlpha = 1;
+  }
+  PK.stage(cv, draw);
+})();
+</script>
+</body>
+</html>
