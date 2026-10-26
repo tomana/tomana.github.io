@@ -64,6 +64,9 @@
      10-26: "I want the full link to show under picker and illd as before, obelisken has no link, and i want the titles to
      be centered"). External sites only, no pages of our own. */
   .wk-body{text-align:center;}
+  /* ↓ at the foot of each screen but the last: straight on to the next (operator, 10-26: "have the downward arrow to go
+     quickly to the next section instead of scrolling"); the first screen's arrow does the same */
+  .wk-next{position:absolute;z-index:1;left:50%;bottom:3vh;bottom:3svh;transform:translate(-50%,0);padding:8px 16px;color:#fff;text-decoration:none;font-size:16px;line-height:1;mix-blend-mode:difference;animation:obx-bob 2.4s ease-in-out infinite;}
   .wk-link{display:inline-block;font-size:13px;letter-spacing:.04em;color:#fff;text-decoration:none;border-bottom:1px solid rgba(255,255,255,.5);padding-bottom:2px;}
   
   @media (min-width:900px){ .wk{padding:0 40px;} .wk-body{left:40px;right:40px;bottom:13vh;bottom:13svh;} }
@@ -192,6 +195,7 @@
     <div class="wk-body">
       <h2 class="wk-name">Obelisken</h2>
     </div>
+    <a class="wk-next" href="#" aria-label="Next work">&#8595;</a>
   </article>
   <article class="wk" data-work="picker">
     <div class="wk-tag"><span>02</span><span>2026</span></div>
@@ -211,6 +215,7 @@
       <h2 class="wk-name">Picker</h2>
       <a class="wk-link" href="https://github.com/tomana/picker" target="_blank" rel="noopener">github.com/tomana/picker &rarr;</a>
     </div>
+    <a class="wk-next" href="#" aria-label="Next work">&#8595;</a>
   </article>
   <article class="wk" data-work="illd">
     <div class="wk-tag"><span>03</span><span>2019</span></div>
@@ -755,10 +760,17 @@
   }
   window.addEventListener('scroll', rigScroll, {passive:true}); window.addEventListener('resize', rigScroll);
 
-  // The arrow brings the next work up to fill the screen.
-  if(EL.workmore) EL.workmore.addEventListener('click', function(e){ e.preventDefault();
-    var w=WORKS[0]; if(!w) return;
-    window.scrollTo({top:(window.scrollY||0)+w.getBoundingClientRect().top, behavior:'smooth'}); });
+  // The arrows bring the next work up to fill the screen, quickly: a third of a second, easing out (the browser's
+  // own smooth scroll takes twice that and more).
+  function glide(el){
+    var y0=window.scrollY||0, d=el.getBoundingClientRect().top, t0=performance.now(), T=340;
+    (function step(t){ var u=Math.min(1,(t-t0)/T); window.scrollTo(0, y0+d*(1-Math.pow(1-u,3))); if(u<1) requestAnimationFrame(step); })(t0);
+  }
+  if(EL.workmore) EL.workmore.addEventListener('click', function(e){ e.preventDefault(); if(WORKS[0]) glide(WORKS[0]); });
+  [].forEach.call(document.querySelectorAll('#obx-worklist .wk-next'), function(a){
+    a.addEventListener('click', function(e){ e.preventDefault();
+      var i=WORKS.indexOf(a.parentNode); if(WORKS[i+1]) glide(WORKS[i+1]); });
+  });
 
   // ---- routes: "/" is the splash. /work, /cv and /contact are real URLs: GitHub Pages serves
   // work/index.html, cv/index.html and contact/index.html, which bounce to /#page; the router opens
