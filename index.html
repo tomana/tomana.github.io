@@ -7,9 +7,14 @@
 <meta name="description" content="Tom Nærland — ultrasound software engineer, mathematician, noise, visualization and realtime reprojection artist.">
 <meta name="theme-color" content="#000000">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23000'/%3E%3Cpolygon points='16,6 21,26 11,26' fill='%23eef0f3'/%3E%3C/svg%3E">
+<!-- The two fonts are the one weight the page uses, cut from the variable fonts (Archivo 700, Martian Mono 400,
+     width 100: drawn pixel for pixel as before) and subset to Latin, as WOFF2: 23 KB, was 807 KB of TTF. Preloaded,
+     so they are not queued behind the videos. -->
+<link rel="preload" href="fonts/MartianMono.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/Archivo.woff2" as="font" type="font/woff2" crossorigin>
 <style>
-  @font-face{font-family:'Archivo';font-style:normal;font-weight:700;font-display:swap;src:url('fonts/Archivo.ttf') format('truetype');}
-  @font-face{font-family:'Martian Mono';font-style:normal;font-weight:400;font-display:swap;src:url('fonts/MartianMono.ttf') format('truetype');}
+  @font-face{font-family:'Archivo';font-style:normal;font-weight:700;font-display:swap;src:url('fonts/Archivo.woff2') format('woff2');}
+  @font-face{font-family:'Martian Mono';font-style:normal;font-weight:400;font-display:swap;src:url('fonts/MartianMono.woff2') format('woff2');}
   html,body{margin:0;padding:0;background:#000;overflow:hidden;}
   *{box-sizing:border-box;}
   a,h1,div,span,p{-webkit-user-select:text;user-select:text;}
@@ -19,6 +24,124 @@
     0%{opacity:0;letter-spacing:.66em;filter:blur(10px);transform:translateY(10px) scale(.84);}
     60%{opacity:1;}
     100%{opacity:1;letter-spacing:.30em;filter:blur(0);transform:translateY(0) scale(1);}
+  }
+  /* Every page stands on a video that fills the screen edge to edge: fixed, the LARGE viewport tall
+     (100lvh), so it still reaches the bottom when a phone's address bar slides away; the text keeps to
+     the small viewport. Fixed, the videos escape the wrap's clip but still fade with their page. */
+  .obx-bgv{position:fixed;top:0;left:0;width:100%;height:100vh;height:100lvh;object-fit:cover;display:block;opacity:0;transition:opacity .9s ease;}
+  .obx-bgv.on{opacity:1;}
+  /* Work: one screen per work. The obelisk is the first screen; each work after it is a screen of its
+     own, and the background crossfades to its video as it comes up past the middle of the screen. The
+     PAGE scrolls (html.obx-scroll, Work only): an inner scroller looks unscrolled to a phone app's
+     pull-to-refresh, which then reloads on every pull down. The next work's label peeks above the bottom
+     of the first screen (--peek), so it shows there is more below. */
+  @keyframes obx-bob{ 0%,100%{transform:translate(-50%,0);} 50%{transform:translate(-50%,5px);} }
+  html.obx-scroll{overflow-x:hidden;overflow-y:auto;}
+  html.obx-scroll body{overflow:visible;}
+  /* The first screen is the obelisk video alone; the rig drawing comes up with the Obelisken screen in the list
+     (operator, 10-26: "Have the ovelisken graphic on a card in the scrollable work section, just keep the video on the
+     main work page"). The arrow belongs to the first screen. */
+
+  /* The tower and its dark bloom move with the Obelisken screen (operator, 10-26: "make the obelisken scroll with the
+     page, but the dark bloom and the negative is great"): they stay fixed, in the wrap, so the difference blend still
+     reads the video under them (inside the scrolling list it would see only the list), and the script shifts them by
+     the screen's offset as the page scrolls (rigScroll). */
+  #obx-workcanvas,#obx-workbloom{will-change:transform;}
+  #obx-work.away #obx-workmore{pointer-events:none;}
+  #obx-worklist{display:none;position:relative;z-index:1;margin-top:calc(100vh - var(--peek,56px));margin-top:calc(100svh - var(--peek,56px));font-family:'Martian Mono',monospace;color:#fff;-webkit-font-smoothing:antialiased;}
+  html.obx-scroll #obx-worklist{display:block;}
+  .wk{position:relative;display:block;min-height:100vh;min-height:100svh;padding:0 20px;}
+  .wk::after{content:'';position:absolute;left:0;right:0;bottom:0;height:75%;pointer-events:none;background:linear-gradient(rgba(0,0,0,0),rgba(0,0,0,.78));}
+  .wk-tag{position:relative;z-index:1;display:flex;justify-content:flex-end;gap:16px;align-items:baseline;height:var(--peek,56px);padding-top:16px;border-top:1px solid rgba(255,255,255,.28);font-size:11px;letter-spacing:.16em;text-transform:uppercase;text-shadow:0 1px 10px rgba(0,0,0,.7);}
+  /* the tag is just the number and the year (operator, 10-26: "i want 01 2026, 02 2026, 03 2019 to be the title or the
+     sections"); the name is the big title below */
+  .wk-tag span{color:rgba(255,255,255,.85);}
+  .wk-body{position:absolute;z-index:1;left:20px;right:20px;top:76vh;top:76svh;text-shadow:0 1px 14px rgba(0,0,0,.55);}   /* the same line on every screen */
+  .obx-bgv[data-work="illd"]{filter:brightness(1.35) contrast(1.08);}   /* a dark room: lift it a little */
+  .wk-name{margin:0 0 18px;font-family:'Archivo',sans-serif;font-weight:700;font-size:clamp(30px,6.4vw,66px);line-height:.95;letter-spacing:.2em;text-indent:.2em;text-transform:uppercase;color:#eef0f3;}   /* the indent balances the spacing after the last letter, as OBELISKEN's on the splash */
+  .wk-desc{margin:0;max-width:600px;font-size:13px;line-height:1.75;letter-spacing:.02em;color:rgba(255,255,255,.88);}
+  /* Each screen: its title, centred, and the full address it goes to under it; Obelisken has none for now (operator,
+     10-26: "I want the full link to show under picker and illd as before, obelisken has no link, and i want the titles to
+     be centered"). External sites only, no pages of our own. Picker has a second one, its walkthrough on the frozen demo
+     (10-30: "add a link under the github address to open the walkthrough on tomnaerland.com, similar style"). */
+  .wk-body{text-align:center;}
+  /* the picker's screen runs a little past one screen: its three lines of links need room above the arrow (operator,
+     10-30: "the arrow is a bit too close to the bottom text, expand that section for some room") */
+  .wk[data-work="picker"]{min-height:calc(100vh + 110px);min-height:calc(100svh + 110px);}
+  /* ↓ at the foot of each screen but the last, straight on to the next; with every screen one screen tall they sit in
+     the same place (operator, 10-26: "with the new better spacing the arrows in the sections make sense") */
+  .wk-next{position:absolute;z-index:1;left:50%;bottom:1vh;bottom:1svh;transform:translate(-50%,0);padding:8px 16px;color:#fff;text-decoration:none;font-size:16px;line-height:1;mix-blend-mode:difference;animation:obx-bob 2.4s ease-in-out infinite;}
+  .wk-pre{display:inline-block;margin-top:6px;font-size:13px;letter-spacing:.04em;color:rgba(255,255,255,.7);}   /* 10-30: "Say Example: before that link", then "newline after example" */
+  .wk-link{display:inline-block;margin-top:2px;font-size:13px;letter-spacing:.04em;color:#fff;text-decoration:none;border-bottom:1px solid rgba(255,255,255,.5);padding-bottom:2px;}
+  
+  @media (min-width:900px){ .wk{padding:0 40px;} .wk-body{left:40px;right:40px;top:74vh;top:74svh;} }
+  /* The picker screen's drawing, as the obelisk screen has its rig: a small live picker, made up (no real
+     cards), in HTML, centred over the clip. On top the agents' usage boxes (the picker's two thick bars a
+     box, session and week, the text knocked out of the fill); then the tabs, AUTO and a grid where some
+     cards are stacks of versions. Cards arrive, a tap keeps or drops them, a keep grows a new version on its
+     stack. It slides up into place as the screen comes up (--pkp, 0..1, set on scroll); a phone scales it
+     down (--pks). */
+  .pk{position:absolute;z-index:1;top:84px;left:50%;width:300px;--pks:1;transform-origin:50% 0;
+    transform:translate(-50%,calc((1 - var(--pkp,1)) * 70px)) scale(calc(var(--pks) * (.92 + .08 * var(--pkp,1))));
+    opacity:var(--pkp,1);pointer-events:none;font-family:'Martian Mono',monospace;color:#fff;}
+  .pk-win{background:rgba(22,22,22,.88);border:1px solid rgba(255,255,255,.22);padding:8px;box-shadow:0 18px 50px rgba(0,0,0,.55);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);}
+  .pk-use{display:flex;gap:5px;margin-bottom:8px;}
+  .pk-ubox{flex:1 1 0;min-width:0;display:grid;grid-template-rows:11px 11px;gap:3px;padding:3px;background:#0d0d0d;}
+  .pk-kbar{position:relative;overflow:hidden;background:#262626;}
+  .pk-kline{position:absolute;inset:0;display:flex;justify-content:space-between;align-items:center;padding:0 3px;white-space:nowrap;font-size:7px;line-height:1;color:#d8d8d8;}
+  .pk-kfill{position:absolute;left:0;top:0;bottom:0;overflow:hidden;transition:width .6s ease;}
+  .pk-kfill .pk-kline{right:auto;color:#111;}
+  .pk-gear{flex:0 0 28px;display:flex;align-items:center;justify-content:center;background:#242424;color:#ececec;}   /* the picker's own settings glyph (static/app/dom.js GLYPH.sliders) */
+  .pk-top{display:flex;gap:12px;align-items:baseline;font-size:10px;letter-spacing:.02em;color:rgba(255,255,255,.5);padding:2px 2px 7px;border-bottom:1px solid rgba(255,255,255,.12);}
+  .pk-top .on{color:#fff;border-bottom:1px solid #fff;padding-bottom:3px;}
+  .pk-top .pk-dots{margin-left:auto;}
+  .pk-auto{display:flex;gap:8px;align-items:center;margin:7px 0;padding:5px 7px;font-size:9px;letter-spacing:.14em;border:1px solid rgba(255,255,255,.14);color:rgba(255,255,255,.75);}
+  .pk-auto i{font-style:normal;color:#9be38f;}
+  .pk-auto .pk-q{margin-left:auto;letter-spacing:.06em;color:rgba(255,255,255,.45);}
+  .pk-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;}
+  /* No rounded corners anywhere in the mock (operator, 10-26: "Dont use rounding in the picker mock").
+     Stacks as the picker draws them (static/app/style.css .cardwrap/.fan): the slot reserves room at the bottom-right
+     and each older version is an outline 3 px further down and right; ‹ › sit on the picture's bottom corners, ‹ lit
+     when there are older versions, › dim on the newest. A vote is "+1" in the + cell, not a frame round the card. */
+  .pk-slot{position:relative;padding:0 9px 9px 0;}
+  .pk-fan{position:absolute;border:1px solid #777;background:#242424;opacity:0;transition:opacity .3s;}
+  .pk-fan.f1{left:3px;top:3px;right:6px;bottom:6px;} .pk-fan.f2{left:6px;top:6px;right:3px;bottom:3px;} .pk-fan.f3{left:9px;top:9px;right:0;bottom:0;}
+  .pk-arr{position:absolute;bottom:18px;width:22%;aspect-ratio:1;display:none;align-items:center;justify-content:center;background:rgba(40,40,40,.32);color:rgba(255,255,255,.9);font-size:10px;line-height:1;}
+  .pk-arr.l{left:1px;} .pk-arr.r{right:1px;color:rgba(255,255,255,.25);}
+  .pk-card.stk .pk-arr{display:flex;}
+  .pk-card{position:relative;z-index:1;border:1px solid #3a3a3a;background:#262626;overflow:hidden;transition:transform .28s cubic-bezier(.3,1.6,.5,1),opacity .25s,box-shadow .25s;}
+  .pk-card .pk-th{display:block;width:100%;height:auto;aspect-ratio:1;}
+  .pk-card .pk-bar{display:flex;align-items:center;height:17px;font-size:9px;color:rgba(255,255,255,.75);}
+  .pk-card .pk-bar span{flex:1;min-width:0;padding-left:4px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;}
+  .pk-card .pk-bar i.cp{flex:0 0 auto;position:relative;width:5px;height:5px;margin:0 4px 0 2px;border:1px solid rgba(255,255,255,.55);}
+  .pk-card .pk-bar i.cp::before{content:'';position:absolute;left:-3px;top:-3px;width:5px;height:5px;border-left:1px solid rgba(255,255,255,.55);border-top:1px solid rgba(255,255,255,.55);}
+  .pk-card .pk-bar em.v{color:#d6efd0;background:rgba(120,220,110,.10);box-shadow:inset 0 0 0 1px rgba(120,220,110,.32);}
+  .pk-card .pk-bar em{flex:0 0 17px;width:17px;font-size:10px;height:17px;line-height:17px;text-align:center;font-style:normal;border-left:1px solid #3a3a3a;transition:background .15s;}
+  .pk-card.out{opacity:0;transform:scale(.7) rotate(-8deg);}
+  .pk-card.new{opacity:0;transform:translateY(-14px) scale(.8);}
+  .pk-card.ver{transform:translate(-3px,-3px);}
+  .pk-card .pk-bar em.hit-m{background:rgba(255,255,255,.3);} .pk-card .pk-bar em.hit-p{background:rgba(120,220,110,.6);}
+  .pk-cur{position:absolute;z-index:2;left:150px;top:200px;width:14px;height:14px;margin:-7px 0 0 -7px;border-radius:50%;background:rgba(255,255,255,.9);box-shadow:0 0 0 4px rgba(255,255,255,.25);transition:left .32s ease,top .32s ease,transform .12s;}
+  .pk-cur.tap{transform:scale(.6);}
+  .pk-lab{position:absolute;font-size:calc(10px / var(--pks));letter-spacing:.12em;white-space:nowrap;color:rgba(255,255,255,.78);text-shadow:0 1px 8px rgba(0,0,0,.8);transition:color .2s;}
+  .pk-lab::after{content:'';position:absolute;top:50%;width:12px;border-top:1px dashed rgba(255,255,255,.55);}
+  .pk-lab.l1,.pk-lab.l3{right:calc(100% + 16px);} .pk-lab.l1::after,.pk-lab.l3::after{left:calc(100% + 3px);}
+  .pk-lab.l2{left:calc(100% + 16px);} .pk-lab.l2::after{right:calc(100% + 3px);}
+  .pk-lab.l3{top:12px;} .pk-lab.l1{top:150px;} .pk-lab.l2{top:250px;}
+  .pk-lab.ping{color:#fff;}
+  /* Every screen is one screen tall, its title in the same place (operator, 10-26: "space the sections out more evenly,
+     they seem different sizes now"); the mock fills the room between the tag and the title (the script sizes it: as
+     wide as a phone allows, at most 1.3x on wider screens). A phone has no room for the side labels. */
+  @media (max-width:899px){ .pk{top:64px;} .pk-lab{display:none;} }
+  /* A phone on its side: everything centred as upright (operator, 10-26: "Center the picker here as well"), but the
+     screen is short, so the title is smaller and higher, the mock starts near the top (the script sizes it to the room
+     above the title) and the tower is drawn smaller and higher. */
+  @media (max-height:560px) and (min-aspect-ratio:5/4){
+    .wk-body{top:66vh;top:66svh;}
+    .wk[data-work="picker"] .wk-body{top:58vh;top:58svh;}   /* three lines under it: a little higher */
+    .wk-name{font-size:clamp(26px,9svh,44px);margin-bottom:10px;}
+    .wk-link,.wk-pre{font-size:12px;}
+    .pk{top:14px;}
   }
 </style>
 </head>
@@ -32,30 +155,30 @@
   <div id="obx-vig" style="position:absolute;inset:0;pointer-events:none;background:radial-gradient(115% 80% at 50% 40%, rgba(0,0,0,0) 38%, rgba(0,0,0,.45) 72%, rgba(0,0,0,.82) 100%);"></div>
   <div id="obx-flare" style="position:absolute;inset:0;pointer-events:none;mix-blend-mode:screen;"></div>
 
-  <nav id="obx-nav" style="position:absolute;top:20px;left:20px;z-index:20;display:flex;flex-direction:column;gap:6px;font-family:'Martian Mono',monospace;color:#fff;mix-blend-mode:difference;opacity:1;transition:opacity .45s ease;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;text-rendering:optimizeLegibility;">
-    <a id="obx-home" href="/" style="font-size:14px;font-weight:400;letter-spacing:.10em;text-transform:none;text-decoration:none;color:currentColor;opacity:1;transition:opacity .25s;width:fit-content;padding:10px 0;line-height:1;">Tom Nærland</a>
-    <a id="obx-navwork" href="#" style="font-size:14px;font-weight:400;letter-spacing:.14em;text-transform:uppercase;text-decoration:none;color:currentColor;opacity:1;transition:opacity .25s;width:fit-content;padding:10px 0;line-height:1;">Work</a>
-    <a id="obx-navcv" href="#" style="font-size:14px;font-weight:400;letter-spacing:.14em;text-transform:uppercase;text-decoration:none;color:currentColor;opacity:1;transition:opacity .25s;width:fit-content;padding:10px 0;line-height:1;">CV</a>
-    <a id="obx-navcontact" href="#" style="font-size:14px;font-weight:400;letter-spacing:.14em;text-transform:uppercase;text-decoration:none;color:currentColor;opacity:1;transition:opacity .25s;width:fit-content;padding:10px 0;line-height:1;">Contact</a>
-  </nav>
-
   <div id="obx-wmbox" style="position:absolute;left:0;right:0;top:82%;display:flex;justify-content:center;pointer-events:none;transform:translateY(-50%);">
     <h1 id="obx-wm" style="margin:0;font-weight:700;font-size:clamp(40px,7vw,98px);line-height:.92;color:#eef0f3;letter-spacing:.30em;text-indent:.30em;font-family:'Archivo',sans-serif;opacity:0;text-shadow:0 0 38px rgba(120,150,200,.18);">OBELISKEN</h1>
   </div>
 
   <div id="obx-work" style="position:absolute;inset:0;opacity:0;transition:opacity .4s ease;pointer-events:none;background:#000;overflow:hidden;">
-    <video id="obx-video" preload="auto" loop muted playsinline style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);min-width:100%;min-height:100%;width:auto;height:auto;object-fit:cover;">
-      <source src="obelisken.mp4" type="video/mp4">
+    <!-- one background per work, crossfaded by scroll; the picker's clip is local to the beta server. ?v= changes
+         with each new cut, so a phone that cached the last one fetches it again. -->
+    <video id="obx-video" class="obx-bgv on" data-work="obelisken" preload="auto" loop muted playsinline>
+      <source src="obelisken.mp4?v=4" type="video/mp4">
     </video>
+    <video class="obx-bgv" data-work="picker" preload="metadata" loop muted playsinline>
+      <source src="local/picker-runthrough.mp4?v=4" type="video/mp4">
+    </video>
+    <video class="obx-bgv" data-work="illd" data-start="7.5" preload="metadata" loop muted playsinline poster="img/work/illd-vigeland.jpg">
+      <source src="illd.mp4" type="video/mp4">
+    </video>
+    <canvas id="obx-workbloom" style="position:absolute;inset:0;width:100%;height:100%;display:block;pointer-events:none;"></canvas>
     <canvas id="obx-workcanvas" style="position:absolute;inset:0;width:100%;height:100%;display:block;mix-blend-mode:difference;pointer-events:none;"></canvas>
-    <div id="obx-worktext" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:14px;pointer-events:none;font-family:'Martian Mono',monospace;color:#fff;mix-blend-mode:difference;padding-bottom:18vh;">
-      <a id="obx-worklink" href="https://vimeo.com/tomana" target="_blank" rel="noopener" style="font-size:clamp(18px,2.4vw,30px);letter-spacing:.04em;color:#fff;text-decoration:none;border-bottom:1px solid rgba(255,255,255,.4);padding-bottom:2px;">vimeo.com/tomana</a>
-    </div>
+    <a id="obx-workmore" href="#obx-worklist" aria-label="More work" style="position:absolute;left:50%;bottom:calc(var(--peek,64px) + 4px);transform:translate(-50%,0);padding:8px 16px;color:#fff;mix-blend-mode:difference;text-decoration:none;font-family:'Martian Mono',monospace;font-size:16px;line-height:1;animation:obx-bob 2.4s ease-in-out infinite;">&#8595;</a>
   </div>
 
   <div id="obx-contact" style="position:absolute;inset:0;opacity:0;transition:opacity .4s ease;pointer-events:none;background:#000;overflow:hidden;">
-    <video id="obx-video2" preload="auto" loop muted playsinline style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);min-width:100%;min-height:100%;width:auto;height:auto;object-fit:cover;">
-      <source src="illd.mp4" type="video/mp4">
+    <video id="obx-video2" class="obx-bgv on" preload="metadata" loop muted playsinline>
+      <source src="bg/contact.mp4?v=2" type="video/mp4">
     </video>
     <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:14px;pointer-events:none;font-family:'Martian Mono',monospace;color:#fff;mix-blend-mode:difference;padding-bottom:18vh;">
       <div style="font-size:11px;letter-spacing:.28em;text-transform:uppercase;color:rgba(255,255,255,.55);">Contact</div>
@@ -63,7 +186,11 @@
     </div>
   </div>
 
-  <div id="obx-cv" style="position:absolute;inset:0;opacity:0;transition:opacity .4s ease;pointer-events:none;background:#000 center/cover no-repeat url(cv-bg.png);overflow:hidden;">
+  <div id="obx-cv" style="position:absolute;inset:0;opacity:0;transition:opacity .4s ease;pointer-events:none;background:#000;overflow:hidden;">
+    <!-- the ultrasound image placed as on the published page (centred, covering), edge to edge, tilting a little with the
+         phone (or the mouse). Shown whole, and then over a blur, for a while on 10-26; the operator: "No, just use the
+         image again". -->
+    <div id="obx-cvimg" style="position:fixed;top:0;left:0;width:100%;height:100vh;height:100lvh;background:#000 center/cover no-repeat url(cv-bg.png);transform:scale(1.1);will-change:transform;"></div>
     <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:14px;pointer-events:none;font-family:'Martian Mono',monospace;color:#fff;mix-blend-mode:difference;padding-bottom:18vh;">
       <div style="font-size:11px;letter-spacing:.28em;text-transform:uppercase;color:rgba(255,255,255,.55);">CV</div>
       <p style="margin:0;max-width:min(560px,80vw);text-align:center;font-size:clamp(13px,1.5vw,17px);line-height:1.7;letter-spacing:.02em;color:#fff;">Ultrasound Software Engineer, Master of Mathematics, small-stage noise, visualization and realtime reprojection artist</p>
@@ -72,12 +199,57 @@
 
 </div>
 
+<section id="obx-worklist">
+  <article class="wk" data-work="obelisken">
+    <div class="wk-tag"><span>01</span><span>2026</span></div>
+    <div class="wk-body">
+      <h2 class="wk-name">Obelisken</h2>
+    </div>
+    <a class="wk-next" href="#" aria-label="Next work">&#8595;</a>
+  </article>
+  <article class="wk" data-work="picker">
+    <div class="wk-tag"><span>02</span><span>2026</span></div>
+    <div class="pk" aria-hidden="true">
+      <div class="pk-win">
+        <div class="pk-use"><div class="pk-ubox"></div><div class="pk-ubox"></div><div class="pk-ubox"></div><div class="pk-gear"><svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3.8 13.4V10M3.8 7.6V2.6M2.5 10h2.6M8 2.6V6M8 8.4v5M6.7 6h2.6M12.2 2.6v6M12.2 11v2.4M10.9 11h2.6"/></svg></div></div>
+        <div class="pk-top"><span class="on">visuals_picked</span><span>music_hybrid</span><span class="pk-dots">&middot;&middot;&middot;</span></div>
+        <div class="pk-auto">&#9656; AUTO <i>ON</i><span class="pk-q">queue &middot; 2</span></div>
+        <div class="pk-grid"></div>
+      </div>
+      <div class="pk-cur"></div>
+      <span class="pk-lab l3">THEIR TIME</span>
+      <span class="pk-lab l1">AGENTS MAKE</span>
+      <span class="pk-lab l2">YOU PICK</span>
+    </div>
+    <div class="wk-body">
+      <h2 class="wk-name">Picker</h2>
+      <a class="wk-link" href="https://github.com/tomana/picker" target="_blank" rel="noopener">github.com/tomana/picker</a><br>
+      <span class="wk-pre">Example:</span><br>
+      <a class="wk-link" href="https://tomnaerland.com/picker/?walk=1">tomnaerland.com/picker</a>
+    </div>
+    <a class="wk-next" href="#" aria-label="Next work">&#8595;</a>
+  </article>
+  <article class="wk" data-work="illd">
+    <div class="wk-tag"><span>03</span><span>2019</span></div>
+    <div class="wk-body">
+      <h2 class="wk-name">Illd</h2>
+      <a class="wk-link" href="https://vimeo.com/327783057" target="_blank" rel="noopener">vimeo.com/327783057</a>
+    </div>
+  </article>
+</section>
+<nav id="obx-nav" style="position:fixed;top:20px;left:20px;z-index:30;display:flex;flex-direction:column;gap:6px;font-family:'Martian Mono',monospace;color:#fff;mix-blend-mode:difference;opacity:1;transition:opacity .45s ease;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;text-rendering:optimizeLegibility;">
+  <a id="obx-home" href="/" style="font-size:14px;font-weight:400;letter-spacing:.10em;text-transform:none;text-decoration:none;color:currentColor;opacity:1;transition:opacity .25s;width:fit-content;padding:10px 0;line-height:1;">Tom Nærland</a>
+  <a id="obx-navwork" href="#" style="font-size:14px;font-weight:400;letter-spacing:.14em;text-transform:uppercase;text-decoration:none;color:currentColor;opacity:1;transition:opacity .25s;width:fit-content;padding:10px 0;line-height:1;">Work</a>
+  <a id="obx-navcv" href="#" style="font-size:14px;font-weight:400;letter-spacing:.14em;text-transform:uppercase;text-decoration:none;color:currentColor;opacity:1;transition:opacity .25s;width:fit-content;padding:10px 0;line-height:1;">CV</a>
+  <a id="obx-navcontact" href="#" style="font-size:14px;font-weight:400;letter-spacing:.14em;text-transform:uppercase;text-decoration:none;color:currentColor;opacity:1;transition:opacity .25s;width:fit-content;padding:10px 0;line-height:1;">Contact</a>
+</nav>
+
 <script>
 "use strict";
 (function(){
   // ---- element handles ----
   var EL = {};
-  ['wrap','canvas','vig','flare','nav','wm','wmbox','work','video','worklink','workcanvas','worktext','contact','video2','mail','cv',
+  ['wrap','canvas','vig','flare','nav','wm','wmbox','work','video','workcanvas','workbloom','workmore','worklist','contact','video2','cvimg','mail','cv',
    'home','navwork','navcv','navcontact'].forEach(function(k){ EL[k]=document.getElementById('obx-'+k); });
 
   var FINT=1.15, FSPREAD=1, FSEP=1;                 // flare tuning (sliders removed)
@@ -310,19 +482,16 @@
   // here depends on time, so the canvas is painted on demand rather than every frame.
   var OV = { dist:31.7, gutter:20, drop:30, halfW:0.065, halfH:0.1672,
              ambient:0.36, key:0.42, rim:0.25, edge:0.38, converge:0.25 };
-  var LENS_DEPTH=[-0.05,5.62,0.255];   // upper head: the depth camera's lens rim
-  var LENS_PROJ =[-0.10,5.02,0.355];   // lower head: the projector's lens rim
-  var CAPTION=['REALTIME PROCESSING WITH',
-               'CAMERA-PROJECTOR INTRINSICS,',
-               'MAPPING DEPTH DATA AND ATTACHED',
-               'GRAPHICS BACK INTO WORLD SPACE'];
   function renderOverlay(){
     var cv=EL.workcanvas, ctx=A.octx; if(!cv||!ctx) return;
     var W=cv.width,H=cv.height; ctx.clearRect(0,0,W,H);
-    var M=OV.gutter*DPR, halfW=H*OV.halfW, halfH=H*OV.halfH;
-    var rigX=W-M-halfW, rigY=M+halfH+OV.drop*DPR;   // drop: px below the top gutter
+    // The tower alone, in the middle of the Obelisken screen, half the screen tall, over a dark bloom
+    // (#obx-workbloom); no cones, no words (operator, 10-26: "Put the obelisken graphic in the center, with a dark
+    // bloom behind it, no words").
+    var short=(H/DPR)<560 && W>H*1.25;   // a phone on its side: smaller and higher, clear of the title at 66 %
+    var rigX=W*0.5, rigY=H*(short ? 0.33 : 0.42);
     var cam={yaw:-0.50, pitch:0.085, yCenter:3.95,
-             camDist:OV.dist, fovy:0.55, ox:rigX, oy:rigY};
+             camDist:OV.dist*(short ? 0.8 : 0.67), fovy:0.55, ox:rigX, oy:rigY};
     var V=makeView(cam,W,H);
     var lw=[-0.35,0.92,0.42]; var ll=Math.hypot(lw[0],lw[1],lw[2]); var L=V.rl([lw[0]/ll,lw[1]/ll,lw[2]/ll]);
     var faces=A.faces, draw=[];
@@ -345,83 +514,33 @@
       var g=Math.round(dd.v*255); ctx.fillStyle='rgb('+g+','+g+','+g+')'; ctx.fill();
       ctx.lineWidth=Math.max(0.6,DPR*0.6); ctx.strokeStyle='rgba(255,255,255,'+OV.edge+')'; ctx.stroke();
     }
-
-    // ---- what the rig is doing: sensing cone out to the body, projection cone back onto it ----
-    var fs=Math.max(9*DPR, Math.min(13*DPR, H*0.0135));
-    var pDepth=V.proj(V.rot(LENS_DEPTH)), pProj=V.proj(V.rot(LENS_PROJ)), base=V.proj(V.rot([0,0,0]));
-    // The cones spring from a point nudged slightly toward the other head, so the two apexes sit
-    // closer together than the lenses themselves. The LABELS stay on the true lens heights, which
-    // keeps them from crowding each other as the origins converge.
-    function towardMid(a,b,t){ return [a[0]+((a[0]+b[0])/2-a[0])*t, a[1]+((a[1]+b[1])/2-a[1])*t, a[2]+((a[2]+b[2])/2-a[2])*t]; }
-    var oDepth=V.proj(V.rot(towardMid(LENS_DEPTH,LENS_PROJ,OV.converge)));
-    var oProj =V.proj(V.rot(towardMid(LENS_PROJ,LENS_DEPTH,OV.converge)));
-
-    function beam(p,tx,ty,sp){
-      var dx=tx-p[0], dy=ty-p[1], l=Math.hypot(dx,dy)||1, nx=-dy/l, ny=dx/l;
-      return { a:[tx+nx*sp,ty+ny*sp], b:[tx-nx*sp,ty-ny*sp],
-               at:function(f,o){ return [p[0]+dx*f+nx*o, p[1]+dy*f+ny*o]; } };
+    // The dark bloom round the tower, with the tower's own shape cut out of it: the bloom darkens the video around
+    // the figure, the figure itself shows the video at full strength in its negative (operator, 10-26: "make it so
+    // that the dark bloom is not under the negative figure itself"). The frame's gaps keep the dark.
+    var bc=EL.workbloom, bx=bc && bc.getContext('2d');
+    if(bx){
+      bx.clearRect(0,0,W,H);
+      var rx=H*(short ? 0.26 : 0.34), ry=H*(short ? 0.34 : 0.44);
+      bx.save(); bx.translate(rigX,rigY); bx.scale(rx/ry,1);
+      var bg=bx.createRadialGradient(0,0,0,0,0,ry);
+      bg.addColorStop(0,'rgba(0,0,0,.88)'); bg.addColorStop(.42,'rgba(0,0,0,.62)'); bg.addColorStop(1,'rgba(0,0,0,0)');
+      bx.fillStyle=bg; bx.fillRect(-ry*2,-ry*2,ry*4,ry*4); bx.restore();
+      // and a slight light bloom hugging the tower, on the dark (operator, 10-26: "Try a slight light bloom ... in
+      // addition to the black"): the tower's outline filled faintly white with a wide white shadow, as one path so the
+      // shadows don't stack; the tower itself is cut out below, so only the glow round it stays
+      var tp=new Path2D();
+      for(var b1=0;b1<draw.length;b1++){ var sa=draw[b1].s; tp.moveTo(sa[0][0],sa[0][1]); for(var sk=1;sk<sa.length;sk++) tp.lineTo(sa[sk][0],sa[sk][1]); tp.closePath(); }
+      bx.save(); bx.fillStyle='rgba(255,255,255,.5)';
+      bx.shadowColor='rgba(255,255,255,.85)'; bx.shadowBlur=18*DPR; bx.fill(tp);
+      bx.shadowColor='rgba(255,255,255,.4)'; bx.shadowBlur=48*DPR; bx.fill(tp);
+      bx.shadowColor='rgba(255,255,255,.22)'; bx.shadowBlur=110*DPR; bx.fill(tp); bx.restore();
+      bx.globalCompositeOperation='destination-out'; bx.fillStyle='#000'; bx.strokeStyle='#000'; bx.lineWidth=Math.max(1,DPR);
+      for(var b2=0;b2<draw.length;b2++){
+        var sb=draw[b2].s; bx.beginPath(); bx.moveTo(sb[0][0],sb[0][1]);
+        for(var sj=1;sj<sb.length;sj++) bx.lineTo(sb[sj][0],sb[sj][1]); bx.closePath(); bx.fill(); bx.stroke();
+      }
+      bx.globalCompositeOperation='source-over';
     }
-    function text(str,x,y,align,alpha,size,track){
-      var sz=size||fs;
-      ctx.save();
-      ctx.font='400 '+sz.toFixed(1)+"px 'Martian Mono', monospace";
-      try{ ctx.letterSpacing=(sz*(track||0.12)).toFixed(2)+'px'; }catch(e){}
-      ctx.textAlign=align; ctx.textBaseline='middle';
-      ctx.fillStyle='rgba(255,255,255,'+alpha+')'; ctx.fillText(str,x,y); ctx.restore();
-    }
-
-    // the rig holds its corner, but the cones reach across to the middle of the frame, where the body is
-    var BD=beam(oDepth, W*0.455, H*0.505, H*0.115);   // depth camera measuring the surface
-    var BP=beam(oProj,  W*0.47,  H*0.57,  H*0.130);   // projector putting the image back on it
-
-    var mid=[(BP.a[0]+BP.b[0])/2,(BP.a[1]+BP.b[1])/2];
-    var grad=ctx.createLinearGradient(oProj[0],oProj[1],mid[0],mid[1]);
-    grad.addColorStop(0,'rgba(255,255,255,.15)'); grad.addColorStop(1,'rgba(255,255,255,0)');
-    ctx.fillStyle=grad; ctx.beginPath();
-    ctx.moveTo(oProj[0],oProj[1]); ctx.lineTo(BP.a[0],BP.a[1]); ctx.lineTo(BP.b[0],BP.b[1]);
-    ctx.closePath(); ctx.fill();
-
-    // The dashed cone fades out along its length instead of stopping dead mid-frame, and each leg
-    // is stroked from the APEX outward. Drawing it as one a->apex->b path started the dash pattern
-    // at the far end, the end that sweeps furthest, which is what made the dashes crawl.
-    var dmid=[(BD.a[0]+BD.b[0])/2,(BD.a[1]+BD.b[1])/2];
-    var dg=ctx.createLinearGradient(oDepth[0],oDepth[1],dmid[0],dmid[1]);
-    dg.addColorStop(0,   'rgba(255,255,255,.40)');
-    dg.addColorStop(0.45,'rgba(255,255,255,.28)');
-    dg.addColorStop(1,   'rgba(255,255,255,0)');
-    ctx.save(); ctx.setLineDash([6*DPR,5*DPR]); ctx.lineWidth=Math.max(1,DPR);
-    ctx.strokeStyle=dg; ctx.beginPath();
-    ctx.moveTo(oDepth[0],oDepth[1]); ctx.lineTo(BD.a[0],BD.a[1]);
-    ctx.moveTo(oDepth[0],oDepth[1]); ctx.lineTo(BD.b[0],BD.b[1]);
-    ctx.stroke(); ctx.restore();
-
-    // A portrait viewport crops the video tight, so there is no dark margin to set text against:
-    // push the labels clear of the rig and move the caption to the bottom, brighter and centred.
-    // A portrait viewport crops the video tight and leaves no dark margin beside the rig, so the
-    // labels swing to the far side of their beams and the caption drops into the dark band under
-    // the link, where white type reads brightly instead of fighting the body.
-    var narrow=(W/H)<0.9;
-    // Both labels sit at the top-left of the rig, right-aligned just outside its widest point, each
-    // held at the height of the lens it names (the tower tapers, so up there the gap is wider than
-    // it looks). They part a little vertically because the two lenses are only a head apart.
-    var labX=rigX-halfW-8*DPR;
-    text('DEPTH IN',  labX, pDepth[1]-fs*0.7, 'right', narrow?.85:.66);
-    text('LIGHT OUT', labX, pProj[1] +fs*0.7, 'right', narrow?.85:.66);
-
-    // One block: OBELISKEN / REPROJECTION heads the explanation and travels with it. Landscape sets
-    // it under the rig against the same gutter; a portrait viewport has no room beside the rig, so
-    // the block centres in the band above the link instead.
-    // The block is anchored from its BOTTOM: its last line lands on the baseline the old "WORK"
-    // label used to sit on, just above the link, so the two read as one column. Everything above
-    // (the two title lines) stacks upward from there.
-    var tfs=fs*1.45;
-    var bx    = narrow ? W*0.5   : W-M;
-    var align = narrow ? 'center': 'right';
-    var capY  = H*(narrow?0.879:0.753) - (CAPTION.length-1)*fs*1.85;
-    var by    = capY - fs*2.3 - tfs*1.35;
-    text('OBELISKEN',    bx, by,          align, .92, tfs, 0.18);
-    text('REPROJECTION:', bx, by+tfs*1.35, align, .92, tfs, 0.18);
-    CAPTION.forEach(function(line,i){ text(line, bx, capY+i*fs*1.85, align, narrow?.8:.5); });
   }
 
   // ---- the splash: the obelisk (and the IVAR / CHEOPS / KALLAX flip before it) on the main canvas ----
@@ -582,9 +701,8 @@
     var W=w.clientWidth||window.innerWidth, H=w.clientHeight||window.innerHeight;
     cv.width=Math.round(W*DPR); cv.height=Math.round(H*DPR);
     if(EL.canvas){ EL.canvas.width=cv.width; EL.canvas.height=cv.height; A._blank=false; }
-    // Portrait: the canvas caption occupies the band above, so the Work label and link sit under it.
-    if(EL.worktext) EL.worktext.style.paddingBottom = ((W/H)<0.9 ? '5vh' : '18vh');
-    if(S.page==='work') renderOverlay();   // sizing the canvas clears it
+    if(EL.workbloom){ EL.workbloom.width=cv.width; EL.workbloom.height=cv.height; }
+    if(S.page==='work'){ workPeek(); renderOverlay(); }   // sizing the canvas clears it
   }
 
   // ---- pages ----
@@ -598,17 +716,19 @@
     });
   }
   function setPage(name){
+    if(name!==S.page) window.scrollTo(0,0);   // Work always opens on the obelisk
+    document.documentElement.classList.toggle('obx-scroll', name==='work');
     S.page=name;
     A._blank=false;   // let the splash canvas settle into (or out of) its idle state
     setNav(name);
-    if(name==='work') renderOverlay();
+    if(name==='work'){ workPeek(); renderOverlay(); }
     var pages={work:EL.work, contact:EL.contact, cv:EL.cv};
     Object.keys(pages).forEach(function(k){ var el=pages[k]; if(!el) return; var on=(k===name);
       el.style.opacity=on?'1':'0'; el.style.pointerEvents=on?'auto':'none'; });
-    if(EL.worklink) EL.worklink.style.pointerEvents=(name==='work')?'auto':'none';
     if(EL.mail) EL.mail.style.pointerEvents=(name==='contact')?'auto':'none';
-    [[EL.video,'work'],[EL.video2,'contact']].forEach(function(pv){ var v=pv[0]; if(!v) return;
+    [[EL.video2,'contact']].forEach(function(pv){ var v=pv[0]; if(!v) return;
       if(name===pv[1]){ v.play().catch(function(){}); } else if(!v.paused){ v.pause(); } });
+    S.bg=undefined; workScroll(); rigScroll();   // force: pick (or rest) the work backgrounds for this page
     if(name==='contact' && !S.mailSet && EL.mail){
       var u=['tom','naerland'].join('.'); var d=['gmail','com'].join('.');
       var addr=u+String.fromCharCode(64)+d;
@@ -635,6 +755,67 @@
   EL.navcv.addEventListener('click', goCV);
   EL.navcontact.addEventListener('click', goContact);
 
+  // ---- Work scrolls: the obelisk is the first screen, then one screen per work ----
+  // The background is the work whose screen has come up past the middle of the viewport (the obelisk
+  // above the first); it crossfades, only that video plays, and the obelisk's rig, caption and link fade
+  // out while another work is up. The next work's label peeks above the bottom of the first screen.
+  var BGV=[].slice.call(document.querySelectorAll('#obx-work .obx-bgv'));
+  var WORKS=[].slice.call(document.querySelectorAll('#obx-worklist .wk'));
+  function workPeek(){
+    S.peek=56; document.documentElement.style.setProperty('--peek', S.peek+'px');
+  }
+  function activeWork(){
+    var mid=window.innerHeight*0.5, cur='hero';
+    WORKS.forEach(function(w){ if(w.getBoundingClientRect().top<=mid) cur=w.getAttribute('data-work'); });
+    return cur;
+  }
+  function workScroll(){
+    var name = S.page==='work' ? activeWork() : null;
+    if(name===S.bg) return;
+    S.bg=name;
+    var video = name==='hero' ? 'obelisken' : name;   // the first screen is the obelisk's video
+    BGV.forEach(function(v){
+      var on=(v.getAttribute('data-work')===video);
+      v.classList.toggle('on', on || (!name && v===EL.video));   // off Work, the obelisk waits underneath
+      if(on){
+        // a work's video may start further in (data-start), past a dark opening; the first time only
+        var st=parseFloat(v.getAttribute('data-start'));
+        if(st && !v._started){ v._started=true;
+          if(v.readyState>=1) v.currentTime=st;
+          else v.addEventListener('loadedmetadata', function(){ v.currentTime=st; }, {once:true}); }
+        v.play().catch(function(){});
+      }
+      else if(!v.paused){ setTimeout(function(){ if(!v.classList.contains('on') || S.page!=='work') v.pause(); }, 950); }
+    });
+    if(EL.work) EL.work.classList.toggle('away', !!name && name!=='hero');
+  }
+  window.addEventListener('scroll', workScroll, {passive:true});
+  // the tower is drawn for the Obelisken screen standing at the top of the viewport; shift it (and the bloom) by
+  // where that screen is now, so it comes up from below and leaves over the top with it
+  var OBX=WORKS.filter(function(w){ return w.getAttribute('data-work')==='obelisken'; })[0], BLOOM=document.getElementById('obx-workbloom');
+  function rigScroll(){
+    if(!OBX || S.page!=='work') return;
+    // the first screen's arrow fades as soon as the page moves: gone after 80 px (operator, 10-26: "The first arrow
+    // should fade faster")
+    if(EL.workmore) EL.workmore.style.opacity=String(Math.max(0, 1-(window.scrollY||0)/80));
+    var t='translate3d(0,'+Math.round(OBX.getBoundingClientRect().top)+'px,0)';
+    if(EL.workcanvas) EL.workcanvas.style.transform=t;
+    if(BLOOM) BLOOM.style.transform=t;
+  }
+  window.addEventListener('scroll', rigScroll, {passive:true}); window.addEventListener('resize', rigScroll);
+
+  // The arrows bring the next work up to fill the screen, quickly: a third of a second, easing out (the browser's
+  // own smooth scroll takes twice that and more).
+  function glide(el){
+    var y0=window.scrollY||0, d=el.getBoundingClientRect().top, t0=performance.now(), T=340;
+    (function step(t){ var u=Math.min(1,(t-t0)/T); window.scrollTo(0, y0+d*(1-Math.pow(1-u,3))); if(u<1) requestAnimationFrame(step); })(t0);
+  }
+  if(EL.workmore) EL.workmore.addEventListener('click', function(e){ e.preventDefault(); if(WORKS[0]) glide(WORKS[0]); });
+  [].forEach.call(document.querySelectorAll('#obx-worklist .wk-next'), function(a){
+    a.addEventListener('click', function(e){ e.preventDefault();
+      var i=WORKS.indexOf(a.parentNode); if(WORKS[i+1]) glide(WORKS[i+1]); });
+  });
+
   // ---- routes: "/" is the splash. /work, /cv and /contact are real URLs: GitHub Pages serves
   // work/index.html, cv/index.html and contact/index.html, which bounce to /#page; the router opens
   // that page and rewrites back to the clean path. Clicking nav pushes the path; back/forward
@@ -654,6 +835,33 @@
   }
   function applyRoute(){ var r=routeFromLocation(); S._routing=true; try{ (ROUTES[r]||goHome)(); } finally{ S._routing=false; } }
   window.addEventListener('popstate', applyRoute);
+
+  // ---- CV: the image tilts a little with the phone ----
+  // Device orientation, measured against a slowly following rest position, so it answers a turn of the hand and settles
+  // back while the phone is held still at any angle; at most 6 degrees, eased. No gyroscope (a computer): the mouse.
+  // iOS asks permission, on the first tap.
+  var TILT={x:0,y:0,tx:0,ty:0,b0:null,g0:null,gyro:false};
+  window.addEventListener('deviceorientation', function(e){
+    if(e.beta==null || e.gamma==null) return;
+    TILT.gyro=true;
+    if(TILT.b0==null){ TILT.b0=e.beta; TILT.g0=e.gamma; }
+    TILT.b0+=(e.beta-TILT.b0)*0.02; TILT.g0+=(e.gamma-TILT.g0)*0.02;
+    TILT.tx=Math.max(-6,Math.min(6,(e.beta-TILT.b0)*0.5)); TILT.ty=Math.max(-6,Math.min(6,(e.gamma-TILT.g0)*0.5));
+  }, true);
+  window.addEventListener('mousemove', function(e){
+    if(TILT.gyro) return;
+    TILT.tx=(0.5-e.clientY/window.innerHeight)*6; TILT.ty=(e.clientX/window.innerWidth-0.5)*6;
+  }, {passive:true});
+  document.addEventListener('click', function ask(){
+    var D=window.DeviceOrientationEvent;
+    if(D && typeof D.requestPermission==='function') D.requestPermission().catch(function(){});
+    document.removeEventListener('click', ask);
+  });
+  function cvTilt(){
+    if(!EL.cvimg) return;
+    TILT.x+=(TILT.tx-TILT.x)*0.08; TILT.y+=(TILT.ty-TILT.y)*0.08;
+    EL.cvimg.style.transform='perspective(900px) rotateX('+TILT.x.toFixed(2)+'deg) rotateY('+TILT.y.toFixed(2)+'deg) scale(1.1)';
+  }
 
   // ---- boot ----
   A.faces = buildScene();
@@ -675,11 +883,161 @@
   (function loop(t){
     try{
       renderCanvas(t);
-      if(S.page==='work' && EL.video && EL.video.paused){ EL.video.play().catch(function(){}); }
+      if(S.page==='work'){ BGV.forEach(function(v){ if(v.classList.contains('on') && v.paused) v.play().catch(function(){}); }); }
       else if(S.page==='contact' && EL.video2 && EL.video2.paused){ EL.video2.play().catch(function(){}); }
+      if(S.page==='cv') cvTilt();
     }catch(e){ /* keep running */ }
     requestAnimationFrame(loop);
   })(performance.now());
+})();
+</script>
+<script>
+"use strict";
+/* The picker screen's live mock (.pk): nine made-up cards, judged by a made-up taste (warm, hard-edged).
+   A tap drops a card or keeps it. A dropped card's place gets a new one, mostly grown from a keep; a kept card
+   gets a new version on its stack (a revise), so the grid drifts toward the taste, the picker's point. Every
+   card the agents make costs a little of their session, in the usage boxes. Runs only while its screen shows. */
+(function(){
+  var root=document.querySelector('.pk'); if(!root) return;
+  var sec=root.closest(".wk"), grid=root.querySelector('.pk-grid'), cur=root.querySelector('.pk-cur'),
+      queue=root.querySelector('.pk-q'),
+      labMake=root.querySelector('.l1'), labPick=root.querySelector('.l2'), labTime=root.querySelector('.l3'),
+      uboxes=[].slice.call(root.querySelectorAll('.pk-ubox'));
+  var seed=(Date.now()%2147483646)+1, id=0, keeps=[], busy=false;
+  function rnd(){ seed=seed*16807%2147483647; return (seed-1)/2147483646; }
+  function hd(a,b){ var d=Math.abs(((a-b)%360+360)%360); return d>180?360-d:d; }
+  // The cards are drawn as in the run-through sketch (playground/picker-run-through.html; operator, 10-26: "I like the
+  // graphics in the walkthrough in the cards, use those on the front"): a gene of a few numbers drawn into 72 px,
+  // stripes, rings, plasma, moire, a warp or blobs, a dark and a light hue, grain, sometimes the fixture's circle.
+  function clamp(v,a,b){ return v<a?a:v>b?b:v; }
+  function gene(){ return {id:++id,v:1,k:rnd()*6|0,h1:rnd()*360,h2:rnd()*360,s:.3+rnd()*.65,c:.25+rnd()*.75,
+    f:1.5+rnd()*8,a:rnd()*Math.PI,cx:(rnd()-.5)*.8,cy:(rnd()-.5)*.8,ring:rnd()<.4,w:rnd()*1.6}; }
+  function child(p,sameCard){ var g={}, d=function(x){ return (rnd()-.5)*x*.8; }; for(var k in p) g[k]=p[k];
+    if(sameCard) g.v=Math.min(9,p.v+1); else { g.id=++id; g.v=1; }
+    g.k=rnd()<.05?rnd()*6|0:p.k; g.h1=p.h1+d(50); g.h2=p.h2+d(40); g.s=clamp(p.s+d(.25),.15,1); g.c=clamp(p.c+d(.3),.1,1);
+    g.f=clamp(p.f*(1+d(.6)),1.2,12); g.a=p.a+d(.9); g.cx=clamp(p.cx+d(.4),-.6,.6); g.cy=clamp(p.cy+d(.4),-.6,.6);
+    g.ring=rnd()<.1?!p.ring:p.ring; g.w=clamp(p.w+d(.8),0,2.4); return g; }
+  // the judge's made-up taste, the sketch's: warm amber on near-black, high contrast, stripes and rings
+  function taste(g){ return .5*(1-Math.min(1,hd(g.h2,28)/80)) + .22*g.c + .16*(g.k===0||g.k===1||g.k===3?1:0) + .12*(g.s>.55?1:0) + rnd()*.1; }
+  function hsl(h,s,l){ h=((h%360)+360)%360/360; var q=l<.5?l*(1+s):l+s-l*s, p=2*l-q;
+    function f(t){ if(t<0) t+=1; if(t>1) t-=1; return t<1/6?p+(q-p)*6*t:t<.5?q:t<2/3?p+(q-p)*(2/3-t)*6:p; }
+    return [f(h+1/3)*255,f(h)*255,f(h-1/3)*255]; }
+  function value(g,x,y){
+    var P=Math.PI, v, i, m;
+    switch(g.k){
+      case 0: v=Math.sin((x*Math.cos(g.a)+y*Math.sin(g.a))*g.f*P+g.w*Math.sin(y*3)); break;
+      case 1: v=Math.sin(Math.hypot(x-g.cx,y-g.cy)*g.f*P*1.3); break;
+      case 2: v=(Math.sin(x*g.f*2)+Math.sin(y*g.f*2.6+g.a*3)+Math.sin((x+y)*g.f*1.4))/3*1.6; break;
+      case 3: v=Math.sin(Math.hypot(x-g.cx,y-g.cy)*g.f*P)*Math.sin(Math.hypot(x+g.cx,y+g.cy)*g.f*P)*1.4; break;
+      case 4: v=Math.sin(x*g.f*P+g.w*2.5*Math.sin(y*g.f*.8*P+g.a)); break;
+      default:
+        for(m=0,i=0;i<3;i++){ var bx=Math.sin(g.a*3+i*2.1)*.55, by=Math.cos(g.a*2+i*1.7)*.55; m+=.12/((x-bx)*(x-bx)+(y-by)*(y-by)+.02); }
+        v=Math.sin(m*g.f*.25);
+    }
+    return clamp(.5+.5*v*(.5+g.c*1.4),0,1);
+  }
+  var TN=72;
+  function draw(cv,g){
+    var x=cv.getContext('2d'), im=x.createImageData(TN,TN), d=im.data, n=(g.id*7919+g.v*131+13)%2147483646+1;
+    var a=hsl(g.h1,g.s,.07+.13*(1-g.c)), b=hsl(g.h2,g.s,.5+.2*g.s);
+    for(var j=0;j<TN;j++) for(var i=0;i<TN;i++){
+      var t=value(g,i/TN*2-1,j/TN*2-1), o=(j*TN+i)*4; n=n*16807%2147483647; var e=(n/2147483647-.5)*10;
+      d[o]=a[0]+(b[0]-a[0])*t+e; d[o+1]=a[1]+(b[1]-a[1])*t+e; d[o+2]=a[2]+(b[2]-a[2])*t+e; d[o+3]=255;
+    }
+    x.putImageData(im,0,0);
+    if(g.ring){ x.strokeStyle='rgba('+(b[0]*.6+100|0)+','+(b[1]*.6+100|0)+','+(b[2]*.6+100|0)+',.85)'; x.lineWidth=2;
+      x.beginPath(); x.arc(TN/2+g.cx*TN*.3,TN/2+g.cy*TN*.3,TN*.17,0,7); x.stroke(); }
+  }
+
+  // ---- the usage boxes: one an agent, the session over the week, the text knocked out of the fill ----
+  var AGENTS=[{s:41,w:22,c:'#d97757',cw:'#a4553a',r:'3h'},{s:18,w:57,c:'#5fc08f',cw:'#3a8a62',r:'1h'},{s:66,w:35,c:'#7aa2ff',cw:'#4c6fc6',r:'4h'}];
+  function kbar(pct,color,left,right){
+    var line=function(extra){ return '<div class="pk-kline"'+extra+'><span>'+left+'</span><span>'+right+'</span></div>'; };
+    return '<div class="pk-kbar">'+line('')+'<div class="pk-kfill" style="transition:none;width:'+pct.toFixed(0)+'%;background:'+color+'">'+
+           line(' style="width:'+(10000/Math.max(pct,0.5)).toFixed(0)+'%"')+'</div></div>';
+  }
+  function paintUsage(){ AGENTS.forEach(function(a,i){
+    uboxes[i].innerHTML=kbar(a.s,a.c,'s:'+Math.round(a.s)+'%',a.r)+kbar(a.w,a.cw,'w:'+Math.round(a.w)+'%','4d'); }); }
+  function spend(){ var a=AGENTS[rnd()*3|0]; a.s+=2+rnd()*3; a.w+=.4+rnd()*.6;
+    if(a.s>97){ a.s=2; a.r='5h'; } if(a.w>97) a.w=5; paintUsage(); }
+  paintUsage();
+
+  // ---- the grid: each card in a slot with room for its stack's fan ----
+  // a card shows its newest version; each older one is an outline of its stack (three at most), and a stack gets ‹ ›
+  function show(slot,g){ var card=slot.card; card.g=g;
+    draw(card.querySelector('.pk-th'), g);
+    card.querySelector('span').textContent='v'+g.id+(g.v>1?'.'+g.v:'');
+    slot.fans.forEach(function(f,k){ f.style.opacity=g.v>k+1?1:0; });
+    card.classList.toggle('stk', g.v>1); }
+  var slots=[];
+  for(var i=0;i<9;i++){
+    var slot=document.createElement('div'); slot.className='pk-slot';
+    slot.innerHTML='<div class="pk-fan f3"></div><div class="pk-fan f2"></div><div class="pk-fan f1"></div>'+
+      '<div class="pk-card"><canvas class="pk-th" width="72" height="72"></canvas><b class="pk-arr l">&lsaquo;</b><b class="pk-arr r">&rsaquo;</b>'+
+      '<div class="pk-bar"><span></span><i class="cp"></i><em>&minus;</em><em>+</em></div></div>';
+    slot.card=slot.querySelector('.pk-card'); slot.fans=[slot.querySelector('.f1'),slot.querySelector('.f2'),slot.querySelector('.f3')];
+    var g=gene(); if(rnd()<.4) g.v=2+(rnd()*2|0);   // some start as stacks
+    show(slot,g); grid.appendChild(slot); slots.push(slot);
+  }
+  function ping(lab){ lab.classList.add('ping'); setTimeout(function(){ lab.classList.remove('ping'); },500); }
+  function vote(card,on){ var em=card.querySelectorAll('em')[1]; em.classList.toggle('v',on); em.textContent=on?'+1':'+'; }
+  function arrive(slot,g){   // agents make: a new card pops in where one left
+    var card=slot.card; card.classList.remove('out','kept'); vote(card,false); card.classList.add('new'); show(slot,g);
+    void card.offsetWidth; card.classList.remove('new');
+    ping(labMake); queue.textContent='queue · '+(1+(rnd()*3|0)); spend(); ping(labTime);
+  }
+  function revise(slot){     // a keep grows a new version on its own stack
+    var card=slot.card; card.classList.remove('kept'); vote(card,false);
+    card.classList.add('ver'); show(slot, child(card.g,true)); spend(); ping(labTime);
+    setTimeout(function(){ card.classList.remove('ver'); }, 260);
+  }
+  function inView(){ var r=sec.getBoundingClientRect(); return r.bottom>0 && r.top<window.innerHeight; }
+  function step(){
+    if(busy || !inView()) return;
+    var free=slots.filter(function(sl){ var c=sl.card.classList; return !c.contains('out') && !c.contains('kept'); });
+    if(!free.length) return;
+    var slot=free[rnd()*free.length|0], card=slot.card, keep=taste(card.g)>.6, em=card.querySelectorAll('em')[keep?1:0];
+    busy=true;
+    cur.style.left=(slot.offsetLeft+card.offsetLeft+em.offsetLeft+em.offsetWidth/2)+'px';
+    cur.style.top=(slot.offsetTop+card.offsetTop+em.offsetTop+em.offsetHeight/2)+'px';
+    setTimeout(function(){   // you pick: a tap
+      cur.classList.add('tap'); em.classList.add(keep?'hit-p':'hit-m'); ping(labPick);
+      setTimeout(function(){
+        cur.classList.remove('tap'); em.classList.remove('hit-p','hit-m'); busy=false;
+        if(keep){
+          card.classList.add('kept'); vote(card,true);
+          keeps.push(card.g); if(keeps.length>4) keeps.shift();
+          setTimeout(function(){ revise(slot); }, 1600);
+        } else {
+          card.classList.add('out');
+          setTimeout(function(){ arrive(slot, keeps.length && rnd()<.8 ? child(keeps[rnd()*keeps.length|0]) : gene()); }, 280);
+        }
+      }, 160);
+    }, 360);
+  }
+  // its size: a phone, nearly the screen's width; wider screens, as big as fits above the words (max 1.3x)
+  // (measured again once the fonts are in: before, the mock is shorter and the words under it rode up into it)
+  var lastW=0, lastH=0;
+  function fit(){
+    var W=window.innerWidth, H=sec.clientHeight||window.innerHeight, wide=W>=900, h=root.offsetHeight||400,
+        body=sec.querySelector('.wk-body'), side=W>H*1.25 && H<560;   // a phone on its side
+    // above the title: from its top to just above the title; beside it: the screen's height less a margin
+    var room=(body ? body.offsetTop : H*.74) - (side ? 12+14 : 18+(wide ? 84 : 64));
+    if(W===lastW && h===lastH && Math.abs(room-fit.room)<1) return;
+    lastW=W; lastH=h; fit.room=room;
+    var s=Math.min(wide || side ? 1.3 : (W-28)/300, room/h);
+    root.style.setProperty('--pks', s.toFixed(3));
+  }
+  fit(); window.addEventListener('resize', fit); window.addEventListener('load', fit);
+  if(document.fonts && document.fonts.ready) document.fonts.ready.then(fit);
+  if(window.ResizeObserver) new ResizeObserver(fit).observe(root);
+  // it slides up into place as its screen comes up
+  function scrollIn(){
+    var r=sec.getBoundingClientRect(), H=window.innerHeight;
+    root.style.setProperty('--pkp', Math.max(0,Math.min(1,(H-r.top)/(H*0.75))).toFixed(3));
+  }
+  window.addEventListener('scroll', scrollIn, {passive:true}); window.addEventListener('resize', scrollIn); scrollIn();
+  if(!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches)) setInterval(step, 720);
 })();
 </script>
 </body>
