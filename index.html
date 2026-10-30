@@ -57,7 +57,6 @@
      sections"); the name is the big title below */
   .wk-tag span{color:rgba(255,255,255,.85);}
   .wk-body{position:absolute;z-index:1;left:20px;right:20px;top:76vh;top:76svh;text-shadow:0 1px 14px rgba(0,0,0,.55);}   /* the same line on every screen */
-  .obx-bgv[data-work="illd"]{filter:brightness(1.35) contrast(1.08);}   /* a dark room: lift it a little */
   .wk-name{margin:0 0 18px;font-family:'Archivo',sans-serif;font-weight:700;font-size:clamp(30px,6.4vw,66px);line-height:.95;letter-spacing:.2em;text-indent:.2em;text-transform:uppercase;color:#eef0f3;}   /* the indent balances the spacing after the last letter, as OBELISKEN's on the splash */
   .wk-desc{margin:0;max-width:600px;font-size:13px;line-height:1.75;letter-spacing:.02em;color:rgba(255,255,255,.88);}
   /* Each screen: its title, centred, and the full address it goes to under it; Obelisken has none for now (operator,
@@ -172,8 +171,8 @@
     <video class="obx-bgv" data-work="picker" preload="metadata" loop muted playsinline>
       <source src="local/picker-runthrough.mp4?v=4" type="video/mp4">
     </video>
-    <video class="obx-bgv" data-work="illd" data-start="7.5" preload="metadata" loop muted playsinline poster="img/work/illd-vigeland.jpg">
-      <source src="illd.mp4" type="video/mp4">
+    <video class="obx-bgv" data-work="illd" preload="metadata" loop muted playsinline poster="img/work/illd-vigeland.jpg">
+      <source src="bg/illd.mp4" type="video/mp4">
     </video>
     <canvas id="obx-workbloom" style="position:absolute;inset:0;width:100%;height:100%;display:block;pointer-events:none;"></canvas>
     <canvas id="obx-workcanvas" style="position:absolute;inset:0;width:100%;height:100%;display:block;mix-blend-mode:difference;pointer-events:none;"></canvas>
