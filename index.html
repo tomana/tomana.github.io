@@ -913,25 +913,26 @@
   // graphics in the walkthrough in the cards, use those on the front"): a gene of a few numbers drawn into 72 px,
   // stripes, rings, plasma, moire, a warp or blobs, a dark and a light hue, grain, sometimes the fixture's circle.
   function clamp(v,a,b){ return v<a?a:v>b?b:v; }
-  // the site's colours, dark to light, as the frozen picker's cards have them (operator, 10-30: "the palette is a bit
-  // off", "Match the site"): the obelisk's thermal map, its hot and cool end, the ultrasound's ambers, Stargate's smoke,
-  // the Illd projector's white
-  var PAL=[['#05030a','#1f2dc9','#18c27a','#f2e23a','#ff3b1f'],['#07020a','#b3145f','#ff5a1f','#ffe15a'],
-           ['#03040c','#2639d8','#25c9c0','#d8f6ff'],['#120402','#7a2a10','#e0874a','#ffd9b0'],
-           ['#0a0201','#4a1406','#c4552a','#f3b07a'],['#08090a','#5d6166','#d6d8db'],['#000000','#3a3936','#f5f2ea']]
+  // Mostly black and white, and chroma_rt's orig01, the hue wheel it colours depth with (the obelisk's look), as the
+  // frozen picker's example cards have them (operator, 10-30: "the palette is a bit off", then "more black and white
+  // and orig01 gradient for the others"). A palette is stops from dark to light; ORIG is the wheel.
+  var PAL=[['#000000','#ffffff'],['#050505','#4a4a4a','#f0f0f0'],['#000000','#1d1d1d','#d9d9d9'],['#000000','#f5f2ea']]
     .map(function(p){ return p.map(function(c){ return [parseInt(c.substr(1,2),16),parseInt(c.substr(3,2),16),parseInt(c.substr(5,2),16)]; }); });
-  function cmap(pal,t){ var st=PAL[pal], x=t*(st.length-1), i=Math.min(st.length-2,Math.max(0,Math.floor(x))), f=x-i;
-    return [st[i][0]+(st[i+1][0]-st[i][0])*f, st[i][1]+(st[i+1][1]-st[i][1])*f, st[i][2]+(st[i+1][2]-st[i][2])*f]; }
-  function gene(){ return {m:tab==='music',id:++id,v:1,k:rnd()*6|0,pal:rnd()*PAL.length|0,c:.25+rnd()*.75,
+  var ORIG=PAL.length, NPAL=PAL.length+2;   // two in six cards are orig01
+  function cmap(pal,t){
+    if(pal>=ORIG){ var h=(t%1)*6, i=Math.floor(h)%6, f=h-Math.floor(h), v=220, p=v*.15, q=v*(1-.85*f), r=v*(1-.85*(1-f));
+      return [[v,r,p],[q,v,p],[p,v,r],[p,q,v],[r,p,v],[v,p,q]][i]; }
+    var st=PAL[pal], x=t*(st.length-1), j=Math.min(st.length-2,Math.max(0,Math.floor(x))), g=x-j;
+    return [st[j][0]+(st[j+1][0]-st[j][0])*g, st[j][1]+(st[j+1][1]-st[j][1])*g, st[j][2]+(st[j+1][2]-st[j][2])*g]; }
+  function gene(){ return {m:tab==='music',id:++id,v:1,k:rnd()*6|0,pal:rnd()*NPAL|0,c:.25+rnd()*.75,
     f:1.5+rnd()*8,a:rnd()*Math.PI,cx:(rnd()-.5)*.8,cy:(rnd()-.5)*.8,ring:rnd()<.4,w:rnd()*1.6}; }
   function child(p,sameCard){ var g={}, d=function(x){ return (rnd()-.5)*x*.8; }; for(var k in p) g[k]=p[k];
     if(sameCard) g.v=Math.min(9,p.v+1); else { g.id=++id; g.v=1; }
-    g.k=rnd()<.05?rnd()*6|0:p.k; g.pal=rnd()<.08?rnd()*PAL.length|0:p.pal; g.c=clamp(p.c+d(.3),.1,1);
+    g.k=rnd()<.05?rnd()*6|0:p.k; g.pal=rnd()<.08?rnd()*NPAL|0:p.pal; g.c=clamp(p.c+d(.3),.1,1);
     g.f=clamp(p.f*(1+d(.6)),1.2,12); g.a=p.a+d(.9); g.cx=clamp(p.cx+d(.4),-.6,.6); g.cy=clamp(p.cy+d(.4),-.6,.6);
     g.ring=rnd()<.1?!p.ring:p.ring; g.w=clamp(p.w+d(.8),0,2.4); return g; }
-  // the judge's made-up taste: the ultrasound's ambers and the thermal map, high contrast, stripes and rings
-  var PALTASTE=[.42,.5,.3,.55,.48,.15,.22];
-  function taste(g){ return PALTASTE[g.pal] + .25*g.c + .16*(g.k===0||g.k===1||g.k===3?1:0) + rnd()*.1; }
+  // the judge's made-up taste: orig01 and hard black and white, high contrast, stripes and rings
+  function taste(g){ return (g.pal>=ORIG ? .5 : g.pal===0 ? .42 : .3) + .25*g.c + .16*(g.k===0||g.k===1||g.k===3?1:0) + rnd()*.1; }
   function value(g,x,y){
     var P=Math.PI, v, i, m;
     switch(g.k){
@@ -947,21 +948,24 @@
     return clamp(.5+.5*v*(.5+g.c*1.4),0,1);
   }
   var TN=72;
-  // a music card's picture: its sound as a waveform of thin bars, its envelope by kind (kick, bass, pad, bell, drone,
-  // pluck), the dark and light hue as the visual cards have them
-  var SOUND=['kick','bass','pad','bell','drone','pluck'];
+  // a music card's picture, in the picker's own colours (static/app/dom.js: LANE_BLUE, RECORDING_YELLOW; operator,
+  // 10-30: "the music stays blue and yellow, as in the picker"): a recording as one yellow waveform, a loop as three
+  // blue voice lanes. Envelopes by kind (kick, bass, pad, bell, drone, pluck).
+  var SOUND=['kick','bass','pad','bell','drone','pluck'], LANE_BLUE='#88a3bf', RECORDING_YELLOW='#d6bd62';
   function env(k,t){ return k===0?Math.exp(-t*7) : k===1?Math.exp(-t*2.2) : k===2?Math.sin(Math.PI*t) : k===3?Math.exp(-t*3.5)*(1-Math.exp(-t*60)) : k===4?.75+.25*Math.sin(t*9) : Math.exp(-t*9); }
   function drawWave(cv,g){
-    var x=cv.getContext('2d'), a=cmap(g.pal,0), n=(g.id*7919+g.v*131+13)%2147483646+1;
-    x.fillStyle='rgb('+(a[0]|0)+','+(a[1]|0)+','+(a[2]|0)+')'; x.fillRect(0,0,TN,TN);
-    x.fillStyle='rgba(255,255,255,.07)'; x.fillRect(0,TN/2,TN,1);
-    for(var i=2;i<TN-2;i+=3){
-      var t=(i-2)/(TN-4); n=n*16807%2147483647; var r=n/2147483647;
-      var h=env(g.k,t)*(.45+.55*Math.abs(Math.sin(t*g.f*9+g.w*Math.sin(t*g.f*3)+g.a)))*(.7+.3*g.c)+.06*r;
-      var b=cmap(g.pal,.35+.65*Math.min(1,h));   // a louder bar sits further up the palette, as the obelisk's heat
-      x.fillStyle='rgb('+(b[0]|0)+','+(b[1]|0)+','+(b[2]|0)+')';
-      var hh=Math.max(1,Math.round(h*TN*.42)); x.fillRect(i,TN/2-hh,2,hh*2);
-    }
+    var x=cv.getContext('2d'), n=(g.id*7919+g.v*131+13)%2147483646+1, rec=(g.k===2||g.k===4);   // pads and drones: recordings
+    x.fillStyle='#141414'; x.fillRect(0,0,TN,TN);
+    var lanes=rec ? [[TN/2,TN*.4]] : [[TN*.22,TN*.13],[TN*.5,TN*.13],[TN*.78,TN*.13]];
+    x.fillStyle=rec ? RECORDING_YELLOW : LANE_BLUE;
+    lanes.forEach(function(L,li){
+      var k=rec ? g.k : (g.k+li*2)%6;
+      for(var i=2;i<TN-2;i+=rec?3:2){
+        var t=(i-2)/(TN-4); n=n*16807%2147483647; var r=n/2147483647;
+        var h=env(k,(t*(1+li*.7))%1)*(.45+.55*Math.abs(Math.sin(t*g.f*9+g.w*Math.sin(t*g.f*3)+g.a+li)))*(.7+.3*g.c)+.06*r;
+        var hh=Math.max(1,Math.round(h*L[1])); x.fillRect(i,L[0]-hh,rec?2:1,hh*2);
+      }
+    });
   }
   function draw(cv,g){
     if(g.m) return drawWave(cv,g);
