@@ -56,7 +56,7 @@
   /* the tag is just the number and the year (operator, 10-26: "i want 01 2026, 02 2026, 03 2019 to be the title or the
      sections"); the name is the big title below */
   .wk-tag span{color:rgba(255,255,255,.85);}
-  .wk-body{position:absolute;z-index:1;left:20px;right:20px;top:76%;text-shadow:0 1px 14px rgba(0,0,0,.55);}   /* the same line on every screen */
+  .wk-body{position:absolute;z-index:1;left:20px;right:20px;top:76vh;top:76svh;text-shadow:0 1px 14px rgba(0,0,0,.55);}   /* the same line on every screen */
   .obx-bgv[data-work="illd"]{filter:brightness(1.35) contrast(1.08);}   /* a dark room: lift it a little */
   .wk-name{margin:0 0 18px;font-family:'Archivo',sans-serif;font-weight:700;font-size:clamp(30px,6.4vw,66px);line-height:.95;letter-spacing:.2em;text-indent:.2em;text-transform:uppercase;color:#eef0f3;}   /* the indent balances the spacing after the last letter, as OBELISKEN's on the splash */
   .wk-desc{margin:0;max-width:600px;font-size:13px;line-height:1.75;letter-spacing:.02em;color:rgba(255,255,255,.88);}
@@ -65,13 +65,16 @@
      be centered"). External sites only, no pages of our own. Picker has a second one, its walkthrough on the frozen demo
      (10-30: "add a link under the github address to open the walkthrough on tomnaerland.com, similar style"). */
   .wk-body{text-align:center;}
+  /* the picker's screen runs a little past one screen: its three lines of links need room above the arrow (operator,
+     10-30: "the arrow is a bit too close to the bottom text, expand that section for some room") */
+  .wk[data-work="picker"]{min-height:calc(100vh + 110px);min-height:calc(100svh + 110px);}
   /* ↓ at the foot of each screen but the last, straight on to the next; with every screen one screen tall they sit in
      the same place (operator, 10-26: "with the new better spacing the arrows in the sections make sense") */
-  .wk-next{position:absolute;z-index:1;left:50%;bottom:3vh;bottom:3svh;transform:translate(-50%,0);padding:8px 16px;color:#fff;text-decoration:none;font-size:16px;line-height:1;mix-blend-mode:difference;animation:obx-bob 2.4s ease-in-out infinite;}
-  .wk-pre{font-size:13px;letter-spacing:.04em;color:rgba(255,255,255,.7);}   /* 10-30: "Say Example: before that link" */
+  .wk-next{position:absolute;z-index:1;left:50%;bottom:1vh;bottom:1svh;transform:translate(-50%,0);padding:8px 16px;color:#fff;text-decoration:none;font-size:16px;line-height:1;mix-blend-mode:difference;animation:obx-bob 2.4s ease-in-out infinite;}
+  .wk-pre{display:inline-block;margin-top:6px;font-size:13px;letter-spacing:.04em;color:rgba(255,255,255,.7);}   /* 10-30: "Say Example: before that link", then "newline after example" */
   .wk-link{display:inline-block;margin-top:2px;font-size:13px;letter-spacing:.04em;color:#fff;text-decoration:none;border-bottom:1px solid rgba(255,255,255,.5);padding-bottom:2px;}
   
-  @media (min-width:900px){ .wk{padding:0 40px;} .wk-body{left:40px;right:40px;top:74%;} }
+  @media (min-width:900px){ .wk{padding:0 40px;} .wk-body{left:40px;right:40px;top:74vh;top:74svh;} }
   /* The picker screen's drawing, as the obelisk screen has its rig: a small live picker, made up (no real
      cards), in HTML, centred over the clip. On top the agents' usage boxes (the picker's two thick bars a
      box, session and week, the text knocked out of the fill); then the tabs, AUTO and a grid where some
@@ -134,8 +137,8 @@
      screen is short, so the title is smaller and higher, the mock starts near the top (the script sizes it to the room
      above the title) and the tower is drawn smaller and higher. */
   @media (max-height:560px) and (min-aspect-ratio:5/4){
-    .wk-body{top:66%;}
-    .wk[data-work="picker"] .wk-body{top:61%;}   /* two links: a little higher, clear of the arrow */
+    .wk-body{top:66vh;top:66svh;}
+    .wk[data-work="picker"] .wk-body{top:58vh;top:58svh;}   /* three lines under it: a little higher */
     .wk-name{font-size:clamp(26px,9svh,44px);margin-bottom:10px;}
     .wk-link,.wk-pre{font-size:12px;}
     .pk{top:14px;}
@@ -221,7 +224,8 @@
     <div class="wk-body">
       <h2 class="wk-name">Picker</h2>
       <a class="wk-link" href="https://github.com/tomana/picker" target="_blank" rel="noopener">github.com/tomana/picker</a><br>
-      <span class="wk-pre">Example:</span> <a class="wk-link" href="https://tomnaerland.com/picker/?walk=1">tomnaerland.com/picker</a>
+      <span class="wk-pre">Example:</span><br>
+      <a class="wk-link" href="https://tomnaerland.com/picker/?walk=1">tomnaerland.com/picker</a>
     </div>
     <a class="wk-next" href="#" aria-label="Next work">&#8595;</a>
   </article>
