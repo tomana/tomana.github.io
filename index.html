@@ -68,6 +68,7 @@
   /* ↓ at the foot of each screen but the last, straight on to the next; with every screen one screen tall they sit in
      the same place (operator, 10-26: "with the new better spacing the arrows in the sections make sense") */
   .wk-next{position:absolute;z-index:1;left:50%;bottom:3vh;bottom:3svh;transform:translate(-50%,0);padding:8px 16px;color:#fff;text-decoration:none;font-size:16px;line-height:1;mix-blend-mode:difference;animation:obx-bob 2.4s ease-in-out infinite;}
+  .wk-pre{font-size:13px;letter-spacing:.04em;color:rgba(255,255,255,.7);}   /* 10-30: "Say Example: before that link" */
   .wk-link{display:inline-block;margin-top:2px;font-size:13px;letter-spacing:.04em;color:#fff;text-decoration:none;border-bottom:1px solid rgba(255,255,255,.5);padding-bottom:2px;}
   
   @media (min-width:900px){ .wk{padding:0 40px;} .wk-body{left:40px;right:40px;top:74%;} }
@@ -136,7 +137,7 @@
     .wk-body{top:66%;}
     .wk[data-work="picker"] .wk-body{top:61%;}   /* two links: a little higher, clear of the arrow */
     .wk-name{font-size:clamp(26px,9svh,44px);margin-bottom:10px;}
-    .wk-link{font-size:12px;}
+    .wk-link,.wk-pre{font-size:12px;}
     .pk{top:14px;}
   }
 </style>
@@ -220,7 +221,7 @@
     <div class="wk-body">
       <h2 class="wk-name">Picker</h2>
       <a class="wk-link" href="https://github.com/tomana/picker" target="_blank" rel="noopener">github.com/tomana/picker</a><br>
-      <a class="wk-link" href="https://tomnaerland.com/picker/?walk=1">tomnaerland.com/picker</a>
+      <span class="wk-pre">Example:</span> <a class="wk-link" href="https://tomnaerland.com/picker/?walk=1">tomnaerland.com/picker</a>
     </div>
     <a class="wk-next" href="#" aria-label="Next work">&#8595;</a>
   </article>
