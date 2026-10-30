@@ -94,6 +94,10 @@
   .pk-gear{flex:0 0 28px;display:flex;align-items:center;justify-content:center;background:#242424;color:#ececec;}   /* the picker's own settings glyph (static/app/dom.js GLYPH.sliders) */
   .pk-top{display:flex;gap:12px;align-items:baseline;font-size:10px;letter-spacing:.02em;color:rgba(255,255,255,.5);padding:2px 2px 7px;border-bottom:1px solid rgba(255,255,255,.12);}
   .pk-top .on{color:#fff;border-bottom:1px solid #fff;padding-bottom:3px;}
+  .pk-top span[data-tab]{pointer-events:auto;cursor:pointer;}   /* the tabs work (10-30: "make the music hybrid link actually work") */
+  /* music cards: a sound's picture with an A/B badge on it (the hybrid tab: an A/B on every card) */
+  .pk-card b.ab{display:none;position:absolute;top:3px;right:3px;padding:1px 3px;font-weight:400;font-size:7px;line-height:1.2;letter-spacing:.04em;color:rgba(255,255,255,.85);background:rgba(0,0,0,.45);}
+  .pk-card.mus b.ab{display:block;} .pk-card.mus .pk-bar i.cp{display:none;}
   .pk-top .pk-dots{margin-left:auto;}
   .pk-auto{display:flex;gap:8px;align-items:center;margin:7px 0;padding:5px 7px;font-size:9px;letter-spacing:.14em;border:1px solid rgba(255,255,255,.14);color:rgba(255,255,255,.75);}
   .pk-auto i{font-style:normal;color:#9be38f;}
@@ -212,7 +216,7 @@
     <div class="pk" aria-hidden="true">
       <div class="pk-win">
         <div class="pk-use"><div class="pk-ubox"></div><div class="pk-ubox"></div><div class="pk-ubox"></div><div class="pk-gear"><svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3.8 13.4V10M3.8 7.6V2.6M2.5 10h2.6M8 2.6V6M8 8.4v5M6.7 6h2.6M12.2 2.6v6M12.2 11v2.4M10.9 11h2.6"/></svg></div></div>
-        <div class="pk-top"><span class="on">visuals_picked</span><span>music_hybrid</span><span class="pk-dots">&middot;&middot;&middot;</span></div>
+        <div class="pk-top"><span class="on" data-tab="visuals">visuals_picked</span><span data-tab="music">music_hybrid</span><span class="pk-dots">&middot;&middot;&middot;</span></div>
         <div class="pk-auto">&#9656; AUTO <i>ON</i><span class="pk-q">queue &middot; 2</span></div>
         <div class="pk-grid"></div>
       </div>
@@ -903,14 +907,14 @@
       queue=root.querySelector('.pk-q'),
       labMake=root.querySelector('.l1'), labPick=root.querySelector('.l2'), labTime=root.querySelector('.l3'),
       uboxes=[].slice.call(root.querySelectorAll('.pk-ubox'));
-  var seed=(Date.now()%2147483646)+1, id=0, keeps=[], busy=false;
+  var seed=(Date.now()%2147483646)+1, id=0, keeps=[], busy=false, tab='visuals', keepsBy={visuals:[],music:[]};
   function rnd(){ seed=seed*16807%2147483647; return (seed-1)/2147483646; }
   function hd(a,b){ var d=Math.abs(((a-b)%360+360)%360); return d>180?360-d:d; }
   // The cards are drawn as in the run-through sketch (playground/picker-run-through.html; operator, 10-26: "I like the
   // graphics in the walkthrough in the cards, use those on the front"): a gene of a few numbers drawn into 72 px,
   // stripes, rings, plasma, moire, a warp or blobs, a dark and a light hue, grain, sometimes the fixture's circle.
   function clamp(v,a,b){ return v<a?a:v>b?b:v; }
-  function gene(){ return {id:++id,v:1,k:rnd()*6|0,h1:rnd()*360,h2:rnd()*360,s:.3+rnd()*.65,c:.25+rnd()*.75,
+  function gene(){ return {m:tab==='music',id:++id,v:1,k:rnd()*6|0,h1:rnd()*360,h2:rnd()*360,s:.3+rnd()*.65,c:.25+rnd()*.75,
     f:1.5+rnd()*8,a:rnd()*Math.PI,cx:(rnd()-.5)*.8,cy:(rnd()-.5)*.8,ring:rnd()<.4,w:rnd()*1.6}; }
   function child(p,sameCard){ var g={}, d=function(x){ return (rnd()-.5)*x*.8; }; for(var k in p) g[k]=p[k];
     if(sameCard) g.v=Math.min(9,p.v+1); else { g.id=++id; g.v=1; }
@@ -937,7 +941,23 @@
     return clamp(.5+.5*v*(.5+g.c*1.4),0,1);
   }
   var TN=72;
+  // a music card's picture: its sound as a waveform of thin bars, its envelope by kind (kick, bass, pad, bell, drone,
+  // pluck), the dark and light hue as the visual cards have them
+  var SOUND=['kick','bass','pad','bell','drone','pluck'];
+  function env(k,t){ return k===0?Math.exp(-t*7) : k===1?Math.exp(-t*2.2) : k===2?Math.sin(Math.PI*t) : k===3?Math.exp(-t*3.5)*(1-Math.exp(-t*60)) : k===4?.75+.25*Math.sin(t*9) : Math.exp(-t*9); }
+  function drawWave(cv,g){
+    var x=cv.getContext('2d'), a=hsl(g.h1,g.s,.08+.06*(1-g.c)), b=hsl(g.h2,g.s,.52+.18*g.s), n=(g.id*7919+g.v*131+13)%2147483646+1;
+    x.fillStyle='rgb('+(a[0]|0)+','+(a[1]|0)+','+(a[2]|0)+')'; x.fillRect(0,0,TN,TN);
+    x.fillStyle='rgba(255,255,255,.07)'; x.fillRect(0,TN/2,TN,1);
+    x.fillStyle='rgb('+(b[0]|0)+','+(b[1]|0)+','+(b[2]|0)+')';
+    for(var i=2;i<TN-2;i+=3){
+      var t=(i-2)/(TN-4); n=n*16807%2147483647; var r=n/2147483647;
+      var h=env(g.k,t)*(.45+.55*Math.abs(Math.sin(t*g.f*9+g.w*Math.sin(t*g.f*3)+g.a)))*(.7+.3*g.c)+.06*r;
+      var hh=Math.max(1,Math.round(h*TN*.42)); x.fillRect(i,TN/2-hh,2,hh*2);
+    }
+  }
   function draw(cv,g){
+    if(g.m) return drawWave(cv,g);
     var x=cv.getContext('2d'), im=x.createImageData(TN,TN), d=im.data, n=(g.id*7919+g.v*131+13)%2147483646+1;
     var a=hsl(g.h1,g.s,.07+.13*(1-g.c)), b=hsl(g.h2,g.s,.5+.2*g.s);
     for(var j=0;j<TN;j++) for(var i=0;i<TN;i++){
@@ -958,15 +978,20 @@
   }
   function paintUsage(){ AGENTS.forEach(function(a,i){
     uboxes[i].innerHTML=kbar(a.s,a.c,'s:'+Math.round(a.s)+'%',a.r)+kbar(a.w,a.cw,'w:'+Math.round(a.w)+'%','4d'); }); }
-  function spend(){ var a=AGENTS[rnd()*3|0]; a.s+=2+rnd()*3; a.w+=.4+rnd()*.6;
-    if(a.s>97){ a.s=2; a.r='5h'; } if(a.w>97) a.w=5; paintUsage(); }
+  // every card made costs its agent a good bite (operator, 10-30: "go faster to 100%"); a full bar resets. (For a day
+  // a full bar shot on to 150 %, out of its box, as a joke; the operator: "Remove the 150% thing".)
+  function spend(){ var a=AGENTS[rnd()*3|0];
+    a.s+=10+rnd()*8; if(a.s>=100){ a.s=2+rnd()*5; a.r='5h'; }
+    a.w+=1.5+rnd()*2; if(a.w>=100) a.w=4+rnd()*6;
+    paintUsage(); }
   paintUsage();
 
   // ---- the grid: each card in a slot with room for its stack's fan ----
   // a card shows its newest version; each older one is an outline of its stack (three at most), and a stack gets ‹ ›
   function show(slot,g){ var card=slot.card; card.g=g;
     draw(card.querySelector('.pk-th'), g);
-    card.querySelector('span').textContent='v'+g.id+(g.v>1?'.'+g.v:'');
+    card.querySelector('span').textContent=g.m ? SOUND[g.k]+(g.v>1?'.'+g.v:'') : 'v'+g.id+(g.v>1?'.'+g.v:'');   // a sound by its kind
+    card.classList.toggle('mus', !!g.m);
     slot.fans.forEach(function(f,k){ f.style.opacity=g.v>k+1?1:0; });
     card.classList.toggle('stk', g.v>1); }
   var slots=[];
@@ -974,7 +999,7 @@
     var slot=document.createElement('div'); slot.className='pk-slot';
     slot.innerHTML='<div class="pk-fan f3"></div><div class="pk-fan f2"></div><div class="pk-fan f1"></div>'+
       '<div class="pk-card"><canvas class="pk-th" width="72" height="72"></canvas><b class="pk-arr l">&lsaquo;</b><b class="pk-arr r">&rsaquo;</b>'+
-      '<div class="pk-bar"><span></span><i class="cp"></i><em>&minus;</em><em>+</em></div></div>';
+      '<b class="ab">A/B</b><div class="pk-bar"><span></span><i class="cp"></i><em>&minus;</em><em>+</em></div></div>';
     slot.card=slot.querySelector('.pk-card'); slot.fans=[slot.querySelector('.f1'),slot.querySelector('.f2'),slot.querySelector('.f3')];
     var g=gene(); if(rnd()<.4) g.v=2+(rnd()*2|0);   // some start as stacks
     show(slot,g); grid.appendChild(slot); slots.push(slot);
@@ -991,6 +1016,18 @@
     card.classList.add('ver'); show(slot, child(card.g,true)); spend(); ping(labTime);
     setTimeout(function(){ card.classList.remove('ver'); }, 260);
   }
+  // the tabs: each has its own cards and its own keeps; a switch deals a fresh grid of that kind
+  [].forEach.call(root.querySelectorAll('.pk-top span[data-tab]'), function(t){
+    t.addEventListener('click', function(e){ e.preventDefault(); e.stopPropagation();
+      var to=t.getAttribute('data-tab'); if(to===tab) return;
+      keepsBy[tab]=keeps; tab=to; keeps=keepsBy[tab];
+      [].forEach.call(root.querySelectorAll('.pk-top span[data-tab]'), function(o){ o.classList.toggle('on', o===t); });
+      slots.forEach(function(sl,k){ var g=keeps.length && rnd()<.5 ? child(keeps[rnd()*keeps.length|0]) : gene(); if(rnd()<.35) g.v=2+(rnd()*2|0);
+        setTimeout(function(){ sl.card.classList.remove('out','kept'); vote(sl.card,false); sl.card.classList.add('new'); show(sl,g);
+          void sl.card.offsetWidth; sl.card.classList.remove('new'); }, k*40); });
+      queue.textContent='queue \u00b7 '+(1+(rnd()*3|0));
+    });
+  });
   function inView(){ var r=sec.getBoundingClientRect(); return r.bottom>0 && r.top<window.innerHeight; }
   function step(){
     if(busy || !inView()) return;
