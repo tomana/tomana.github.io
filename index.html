@@ -1001,19 +1001,15 @@
   function drawRays(cv,g){
     var x=cv.getContext('2d'), im=x.createImageData(TN,TN), d=im.data, S=2, N=TN*S;
     var rs=(g.id*48271)%2147483647||1, r=function(){ rs=rs*16807%2147483647; return (rs-1)/2147483646; };
-    // Two kinds, half each by the card's id: soft organic lumps (the first round, 11-01: "you are on to it") and
-    // rectangular things, pillars and slabs like a room's door frames and walls, each a rounded box curving a little
-    // across its width so its tilt draws rings ("can you go to more rectangular stuff", "for the shapes, but have the
-    // circles too", then "doesn't feel as fresh"). The rings round them stay circles.
-    var boxy=r()<.5, B=[], nb=boxy ? 2+(r()*3|0) : 3+(r()*4|0);
-    for(var b=0;b<nb;b++){
-      if(boxy){ var tall=r()<.6; B.push([r()*1.2-.6+g.cx*.3, r()*.8-.3+g.cy*.3, tall?.08+r()*.14:.22+r()*.3, tall?.4+r()*.5:.15+r()*.25, .55+r()*.45]); }
-      else B.push([r()-.5+g.cx*.3, r()-.25+g.cy*.3, .12+r()*.22, .15+r()*.28, .5+r()*.5]); }
+    // Rectangular things: pillars and slabs like a room's door frames and walls, each a rounded box curving a little
+    // across its width so its tilt draws rings; the rings round them stay circles (operator, 11-01: "go to more
+    // rectangular stuff", "for the shapes, but have the circles too", then "The more square ones in there are cool, but
+    // remove the rounded blobs, but you found the style").
+    var B=[], nb=2+(r()*3|0);
+    for(var b=0;b<nb;b++){ var tall=r()<.6;
+      B.push([r()*1.2-.6+g.cx*.3, r()*.8-.3+g.cy*.3, tall?.08+r()*.14:.22+r()*.3, tall?.4+r()*.5:.15+r()*.25, .55+r()*.45]); }
     var ph0=r()*6, ca=Math.cos(g.a), sa=Math.sin(g.a);
     function H(px,py){ var h=0, i, bx;
-      if(!boxy){
-        for(i=0;i<B.length;i++){ bx=B[i]; var dx=px-bx[0], dy=py-bx[1]; h+=bx[4]*Math.exp(-(dx*dx/(2*bx[2]*bx[2])+dy*dy/(2*bx[3]*bx[3]))); }
-        return h+.05*(1+g.w)*Math.sin(4.3*px+2.1*py+ph0)*Math.sin(3.1*py-1.7*px); }
       for(i=0;i<B.length;i++){ bx=B[i]; var qx=Math.abs(px-bx[0])-bx[2]+.03, qy=Math.abs(py-bx[1])-bx[3]+.03;
         var sd=Math.sqrt(Math.max(qx,0)*Math.max(qx,0)+Math.max(qy,0)*Math.max(qy,0))+Math.min(Math.max(qx,qy),0)-.03;
         if(sd<.02){ var u=(px-bx[0])/bx[2], hb=bx[4]*(1-.22*u*u)*Math.min(1,(.02-sd)/.04); if(hb>h) h=hb; } }
