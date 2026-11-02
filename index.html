@@ -126,16 +126,10 @@
   .pk-card .pk-bar em.hit-m{background:rgba(255,255,255,.3);} .pk-card .pk-bar em.hit-p{background:rgba(120,220,110,.6);}
   .pk-cur{position:absolute;z-index:2;left:150px;top:200px;width:14px;height:14px;margin:-7px 0 0 -7px;border-radius:50%;background:rgba(255,255,255,.9);box-shadow:0 0 0 4px rgba(255,255,255,.25);transition:left .32s ease,top .32s ease,transform .12s;}
   .pk-cur.tap{transform:scale(.6);}
-  .pk-lab{position:absolute;font-size:calc(10px / var(--pks));letter-spacing:.12em;white-space:nowrap;color:rgba(255,255,255,.78);text-shadow:0 1px 8px rgba(0,0,0,.8);transition:color .2s;}
-  .pk-lab::after{content:'';position:absolute;top:50%;width:12px;border-top:1px dashed rgba(255,255,255,.55);}
-  .pk-lab.l1,.pk-lab.l3{right:calc(100% + 16px);} .pk-lab.l1::after,.pk-lab.l3::after{left:calc(100% + 3px);}
-  .pk-lab.l2{left:calc(100% + 16px);} .pk-lab.l2::after{right:calc(100% + 3px);}
-  .pk-lab.l3{top:12px;} .pk-lab.l1{top:150px;} .pk-lab.l2{top:250px;}
-  .pk-lab.ping{color:#fff;}
   /* Every screen is one screen tall, its title in the same place (operator, 10-26: "space the sections out more evenly,
      they seem different sizes now"); the mock fills the room between the tag and the title (the script sizes it: as
-     wide as a phone allows, at most 1.3x on wider screens). A phone has no room for the side labels. */
-  @media (max-width:899px){ .pk{top:64px;} .pk-lab{display:none;} }
+     wide as a phone allows, at most 1.3x on wider screens). */
+  @media (max-width:899px){ .pk{top:64px;} }
   /* A phone on its side: everything centred as upright (operator, 10-26: "Center the picker here as well"), but the
      screen is short, so the title is smaller and higher, the mock starts near the top (the script sizes it to the room
      above the title) and the tower is drawn smaller and higher. */
@@ -220,9 +214,6 @@
         <div class="pk-grid"></div>
       </div>
       <div class="pk-cur"></div>
-      <span class="pk-lab l3">THEIR TIME</span>
-      <span class="pk-lab l1">AGENTS MAKE</span>
-      <span class="pk-lab l2">YOU PICK</span>
     </div>
     <div class="wk-body">
       <h2 class="wk-name">Picker</h2>
@@ -904,7 +895,6 @@
   var root=document.querySelector('.pk'); if(!root) return;
   var sec=root.closest(".wk"), grid=root.querySelector('.pk-grid'), cur=root.querySelector('.pk-cur'),
       queue=root.querySelector('.pk-q'),
-      labMake=root.querySelector('.l1'), labPick=root.querySelector('.l2'), labTime=root.querySelector('.l3'),
       uboxes=[].slice.call(root.querySelectorAll('.pk-ubox'));
   var seed=(Date.now()%2147483646)+1, id=0, keeps=[], busy=false, tab='visuals', keepsBy={visuals:[],music:[]};
   function rnd(){ seed=seed*16807%2147483647; return (seed-1)/2147483646; }
@@ -1101,16 +1091,15 @@
     g.pal=FIRST[i];
     show(slot,g); grid.appendChild(slot); slots.push(slot);
   }
-  function ping(lab){ lab.classList.add('ping'); setTimeout(function(){ lab.classList.remove('ping'); },500); }
   function vote(card,on){ var em=card.querySelectorAll('em')[1]; em.classList.toggle('v',on); em.textContent=on?'+1':'+'; }
   function arrive(slot,g){   // agents make: a new card pops in where one left
     var card=slot.card; card.classList.remove('out','kept'); vote(card,false); card.classList.add('new'); show(slot,g);
     void card.offsetWidth; card.classList.remove('new');
-    ping(labMake); queue.textContent='queue · '+(1+(rnd()*3|0)); spend(); ping(labTime);
+    queue.textContent='queue · '+(1+(rnd()*3|0)); spend();
   }
   function revise(slot){     // a keep grows a new version on its own stack
     var card=slot.card; card.classList.remove('kept'); vote(card,false);
-    card.classList.add('ver'); show(slot, child(card.g,true)); spend(); ping(labTime);
+    card.classList.add('ver'); show(slot, child(card.g,true)); spend();
     setTimeout(function(){ card.classList.remove('ver'); }, 260);
   }
   // the tabs: each has its own cards and its own keeps; a switch deals a fresh grid of that kind
@@ -1135,7 +1124,7 @@
     cur.style.left=(slot.offsetLeft+card.offsetLeft+em.offsetLeft+em.offsetWidth/2)+'px';
     cur.style.top=(slot.offsetTop+card.offsetTop+em.offsetTop+em.offsetHeight/2)+'px';
     setTimeout(function(){   // you pick: a tap
-      cur.classList.add('tap'); em.classList.add(keep?'hit-p':'hit-m'); ping(labPick);
+      cur.classList.add('tap'); em.classList.add(keep?'hit-p':'hit-m');
       setTimeout(function(){
         cur.classList.remove('tap'); em.classList.remove('hit-p','hit-m'); busy=false;
         if(keep){
