@@ -87,8 +87,8 @@
      tower's dark bloom with a faint light hugging the edge (operator, 11-04: "It has a slight transparency, stay in
      that lane, but with negative and the halo stuff the obelisken has, very subtle but still a little visible").
      Outer shadows paint only outside the box, so the bloom stays off the panel itself, as it does off the tower. */
-  .pk-win{background:rgba(22,22,22,.8);border:1px solid rgba(255,255,255,.26);padding:8px;
-    box-shadow:0 0 14px rgba(255,255,255,.3),0 0 40px rgba(255,255,255,.13),0 0 90px rgba(255,255,255,.06),0 0 80px 36px rgba(0,0,0,.7),0 0 260px 130px rgba(0,0,0,.5);
+  .pk-win{background:rgba(22,22,22,.86);border:1px solid rgba(255,255,255,.26);padding:8px;
+    box-shadow:0 0 14px rgba(255,255,255,.25),0 0 40px rgba(255,255,255,.1),0 0 90px rgba(255,255,255,.05),0 0 80px 36px rgba(0,0,0,.58),0 0 260px 130px rgba(0,0,0,.4);
     -webkit-backdrop-filter:blur(6px) invert(1);backdrop-filter:blur(6px) invert(1);}
   .pk-use{display:flex;gap:5px;margin-bottom:8px;}
   .pk-ubox{flex:1 1 0;min-width:0;display:grid;grid-template-rows:11px 11px;gap:3px;padding:3px;background:#0d0d0d;}
@@ -1059,7 +1059,7 @@
   }
 
   // ---- the usage boxes: one an agent, the session over the week, the text knocked out of the fill ----
-  var AGENTS=[{s:41,w:22,c:'#d97757',cw:'#a4553a',r:'3h'},{s:18,w:57,c:'#5fc08f',cw:'#3a8a62',r:'1h'},{s:66,w:35,c:'#7aa2ff',cw:'#4c6fc6',r:'4h'}];
+  var AGENTS=[{s:41,w:22,c:'#d97757',cw:'#a4553a',r:'3h'},{s:66,w:35,c:'#7aa2ff',cw:'#4c6fc6',r:'4h'},{s:18,w:57,c:'#5fc08f',cw:'#3a8a62',r:'1h'}];   // green on the right (11-04)
   function kbar(pct,color,left,right){
     var line=function(extra){ return '<div class="pk-kline"'+extra+'><span>'+left+'</span><span>'+right+'</span></div>'; };
     return '<div class="pk-kbar">'+line('')+'<div class="pk-kfill" style="transition:none;width:'+pct.toFixed(0)+'%;background:'+color+'">'+
@@ -1150,8 +1150,9 @@
   function fit(){
     var W=window.innerWidth, H=sec.clientHeight||window.innerHeight, wide=W>=900, h=root.offsetHeight||400,
         body=sec.querySelector('.wk-body'), side=W>H*1.25 && H<560;   // a phone on its side
-    // above the title: from its top to just above the title; beside it: the screen's height less a margin
-    var room=(body ? body.offsetTop : H*.74) - (side ? 12+14 : 18+(wide ? 84 : 64));
+    // above the title: from its top to a gap above the title, room for the halo (11-04: "increase the distance to the
+    // text of the picker title a bit"); beside it: the screen's height less a margin
+    var room=(body ? body.offsetTop : H*.74) - (side ? 32+14 : 72+(wide ? 84 : 64));
     if(W===lastW && h===lastH && Math.abs(room-fit.room)<1) return;
     lastW=W; lastH=h; fit.room=room;
     var s=Math.min(wide || side ? 1.3 : (W-28)/300, room/h);
