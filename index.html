@@ -1151,8 +1151,9 @@
     var W=window.innerWidth, H=sec.clientHeight||window.innerHeight, wide=W>=900, h=root.offsetHeight||400,
         body=sec.querySelector('.wk-body'), side=W>H*1.25 && H<560;   // a phone on its side
     // above the title: from its top to a gap above the title, room for the halo (11-04: "increase the distance to the
-    // text of the picker title a bit"); beside it: the screen's height less a margin
-    var room=(body ? body.offsetTop : H*.74) - (side ? 32+14 : 72+(wide ? 84 : 64));
+    // text of the picker title a bit", then "too wide on mobile, but too small on desktop"); beside it: the screen's
+    // height less a margin
+    var room=(body ? body.offsetTop : H*.74) - (side ? 32+14 : wide ? 110+84 : 44+64);
     if(W===lastW && h===lastH && Math.abs(room-fit.room)<1) return;
     lastW=W; lastH=h; fit.room=room;
     var s=Math.min(wide || side ? 1.3 : (W-28)/300, room/h);
