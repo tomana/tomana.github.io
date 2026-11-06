@@ -59,17 +59,15 @@
   .wk-body{position:absolute;z-index:1;left:20px;right:20px;top:76vh;top:76svh;text-shadow:0 1px 14px rgba(0,0,0,.55);}   /* the same line on every screen */
   .wk-name{margin:0 0 18px;font-family:'Archivo',sans-serif;font-weight:700;--wk-t:clamp(30px,6.4vw,66px);font-size:var(--wk-t);line-height:.95;letter-spacing:.2em;text-indent:.2em;text-transform:uppercase;color:#eef0f3;}   /* the indent balances the spacing after the last letter, as OBELISKEN's on the splash */
   /* A title too long for the usual size: one font and one size, the usual one where it fits, scaled down where not
-     (operator, 11-06: "not two different fonts"; two lines on a phone came to 11 px: "it becomes way too small"). One
-     line on a computer; a line per part below that, the longest part broken once more on an upright phone. The parts
-     after the first are as written, not in capitals. The divisors are the lines' widths in em, indent included, the
-     computer's margin allowing for a scrollbar; the svh limits keep the lines clear of the arrow on a short screen. */
-  .wk-name.wk-long{font-size:min(var(--wk-t),calc((100vw - 40px)/18.1),5.5vh);font-size:min(var(--wk-t),calc((100vw - 40px)/18.1),5.5svh);white-space:nowrap;}
-  .wk-long>span{display:block;}
+     (operator, 11-06: "not two different fonts"; two lines on a phone once came to 11 px: "it becomes way too small").
+     One line, but broken after the slash and once more on an upright phone. The part after the slash is as written, not
+     in capitals. The divisors are the lines' widths in em, indent included; the computer's margin allows for a scrollbar. */
+  .wk-name.wk-long{font-size:min(var(--wk-t),calc((100vw - 40px)/25.9));white-space:nowrap;}
   .wk-long>span+span{text-transform:none;}
-  @media (min-width:900px){ .wk-name.wk-long{font-size:min(var(--wk-t),calc((100vw - 96px)/37.7));} .wk-long>span{display:inline;} }
+  @media (min-width:900px){ .wk-name.wk-long{font-size:min(var(--wk-t),calc((100vw - 96px)/25.9));} }
   @media (max-width:699px) and (orientation:portrait){
-    .wk-name.wk-long{font-size:min(var(--wk-t),calc((100vw - 40px)/11.6),4vh);font-size:min(var(--wk-t),calc((100vw - 40px)/11.6),4svh);}
-    .wk-long span span{display:block;}
+    .wk-name.wk-long{font-size:min(var(--wk-t),calc((100vw - 40px)/8.95));}
+    .wk-long span{display:block;}
   }
   .wk-desc{margin:0;max-width:600px;font-size:13px;line-height:1.75;letter-spacing:.02em;color:rgba(255,255,255,.88);}
   /* Each screen: its title, centred, and the full address it goes to under it; Obelisken has none for now (operator,
@@ -156,8 +154,6 @@
     .wk-body{top:66vh;top:66svh;}
     .wk[data-work="picker"] .wk-body{top:58vh;top:58svh;}   /* three lines under it: a little higher */
     .wk-name{--wk-t:clamp(26px,9svh,44px);margin-bottom:10px;}
-    .wk-name.wk-long{font-size:min(var(--wk-t),calc((100vw - 40px)/18.1),7.6svh);}
-    .wk-long>span{display:block;}
     .wk-link,.wk-pre{font-size:12px;}
     .pk{top:14px;}
   }
@@ -221,7 +217,7 @@
   <article class="wk" data-work="obelisken">
     <div class="wk-tag"><span>01</span><span>2026</span></div>
     <div class="wk-body">
-      <h2 class="wk-name wk-long"><span>Obelisken/</span><span><span>Music for the</span> <span>machine war/</span></span><span>Drones over Giza</span></h2>
+      <h2 class="wk-name wk-long"><span>Obelisken/</span><span><span>Music for the</span> <span>machine war</span></span></h2>
     </div>
     <a class="wk-next" href="#" aria-label="Next work">&#8595;</a>
   </article>
