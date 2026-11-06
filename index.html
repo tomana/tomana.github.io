@@ -59,12 +59,18 @@
   .wk-body{position:absolute;z-index:1;left:20px;right:20px;top:76vh;top:76svh;text-shadow:0 1px 14px rgba(0,0,0,.55);}   /* the same line on every screen */
   .wk-name{margin:0 0 18px;font-family:'Archivo',sans-serif;font-weight:700;font-size:clamp(30px,6.4vw,66px);line-height:.95;letter-spacing:.2em;text-indent:.2em;text-transform:uppercase;color:#eef0f3;}   /* the indent balances the spacing after the last letter, as OBELISKEN's on the splash */
   /* A title too long for the usual size: one font and one size, scaled to the screen's width, on one line where there
-     is room and broken after the slash on a phone (operator, 11-06: "newline after the slash ... if needed and scale
-     the text so the second part fits, not two different fonts"). The divisors are the lines' widths in em, indent
-     included; the computer's margin allows for a scrollbar. */
-  .wk-name.wk-long{font-size:min(66px,calc((100vw - 40px)/31.1));white-space:nowrap;}
-  .wk-long span{display:block;}
-  @media (min-width:900px){ .wk-name.wk-long{font-size:min(66px,calc((100vw - 96px)/39.3));} .wk-long span{display:inline;} }
+     is room, broken after the slash below that, and after "drone" on an upright phone (operator, 11-06: "not two
+     different fonts"; at two lines a phone got 11 px: "it becomes way too small"). The part after the slash is in small
+     letters ("With small m"). The divisors are the lines' widths in em, indent included; the computer's margin allows
+     for a scrollbar. */
+  .wk-name.wk-long{font-size:calc((100vw - 40px)/26.6);white-space:nowrap;}
+  .wk-long>span{display:block;}
+  .wk-long>span+span{text-transform:none;}
+  @media (min-width:900px){ .wk-name.wk-long{font-size:min(66px,calc((100vw - 96px)/34.85));} .wk-long>span{display:inline;} }
+  @media (max-width:699px) and (orientation:portrait){
+    .wk-name.wk-long{font-size:min(7vh,calc((100vw - 40px)/14.15));font-size:min(7svh,calc((100vw - 40px)/14.15));}
+    .wk-long span span{display:block;}
+  }
   .wk-desc{margin:0;max-width:600px;font-size:13px;line-height:1.75;letter-spacing:.02em;color:rgba(255,255,255,.88);}
   /* Each screen: its title, centred, and the full address it goes to under it; Obelisken has none for now (operator,
      10-26: "I want the full link to show under picker and illd as before, obelisken has no link, and i want the titles to
@@ -213,7 +219,7 @@
   <article class="wk" data-work="obelisken">
     <div class="wk-tag"><span>01</span><span>2026</span></div>
     <div class="wk-body">
-      <h2 class="wk-name wk-long"><span>Obelisken/</span><span>music_for_the_drone_and_machine_war</span></h2>
+      <h2 class="wk-name wk-long"><span>Obelisken/</span><span><span>music_for_the_drone</span><span>_and_machine_war</span></span></h2>
     </div>
     <a class="wk-next" href="#" aria-label="Next work">&#8595;</a>
   </article>
